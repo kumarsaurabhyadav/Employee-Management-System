@@ -90,7 +90,7 @@ const PrintPayslip = () => {
         {/* Added a massive, deep black shadow to make it literally pop off the dark background */}
         <div 
           ref={pdfRef} 
-          className='w-full bg-white rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-zinc-800 overflow-hidden relative transition-all duration-500 group-hover:shadow-[0_0_100px_rgba(0,0,0,0.9)]'
+          className='w-full bg-white rounded-4xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-zinc-800 overflow-hidden relative transition-all duration-500 group-hover:shadow-[0_0_100px_rgba(0,0,0,0.9)]'
         >
           
           {/* Subtle Background Pattern & Watermark */}
