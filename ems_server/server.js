@@ -3,6 +3,10 @@ import cors from "cors";
 import "dotenv/config";
 import multer from "multer";
 import connectDB from "./config/db.js";
+import authRouter from "./routes/authRoutes.js";
+import employeeRouter from "./routes/employeeRoutes.js";
+import profileRouter from "./routes/profileRoutes.js";
+import attendaceRouter from "./routes/attendanceRoutes.js";
 
 
 const app = express()
@@ -16,6 +20,11 @@ app.use(multer().none())
 
 //Routes
 app.get("/", (req, res)=> res.send("server is running"))
+app.use("/api/auth", authRouter)
+app.use("/api/employees", employeeRouter)
+app.use("/api/profile", profileRouter)
+app.use("/api/attendance", attendaceRouter)
+
 
 await connectDB()
 
