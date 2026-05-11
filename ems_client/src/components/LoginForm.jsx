@@ -80,7 +80,12 @@ const LoginForm = ({ role, title, subtitle }) => {
                         <div className='space-y-1.5'>
                             <div className='flex items-center justify-between'>
                                 <label className='block text-xs font-medium text-zinc-700'>Password</label>
-                                <a href="#" className='text-xs font-medium text-zinc-500 hover:text-black transition-colors'>Forgot password?</a>
+                                <Link
+                                    to={`/forgot-password?role=${encodeURIComponent(role || "employee")}`}
+                                    className='text-xs font-medium text-zinc-500 hover:text-black transition-colors'
+                                >
+                                    Forgot password?
+                                </Link>
                             </div>
                             <div className='relative'>
                                 <input 

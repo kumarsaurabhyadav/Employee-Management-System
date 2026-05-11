@@ -11,6 +11,8 @@ import Setting from './pages/Settings'
 import PrintPayslip from './pages/PrintPayslip'
 import LoginForm from './components/LoginForm'
 import Attendance from './pages/Attendance'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 const App = () => {
   return (
@@ -22,6 +24,9 @@ const App = () => {
         <Route path='/login/admin' element={<LoginForm role='admin' title='Admin Portal' subtitle='Sign in to manage the organization'/>}/>
 
         <Route path='/login/employee' element={<LoginForm role='employee' title='Employee Portal' subtitle='Sign in to access your account'/>}/>
+
+        <Route path='/forgot-password' element={<ForgotPassword/>}/>
+        <Route path='/reset-password' element={<ResetPassword/>}/>
 
 
         <Route element={<Layout/>}>
