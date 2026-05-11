@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { href, Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { dummyProfileData } from '../assets/assets'
 import { CalendarIcon, ChevronRightIcon, DollarSignIcon, FileTextIcon, LayoutGridIcon, Loader2, LogOutIcon, MenuIcon, SettingsIcon, UserIcon, XIcon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -7,6 +7,7 @@ import api from '../api/axios'
 
 const Sidebar = () => {
     const { pathname } = useLocation()
+    const navigate = useNavigate()
     const [userName, setUserName] = useState('')
     const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -34,9 +35,9 @@ const Sidebar = () => {
         {name: "Settings", href: "/settings", icon: SettingsIcon}
     ]
 
-    const handleLogout = () => {
-        logout()
-        window.location.href = "/login"
+    const handleLogout = async () => {
+        await logout()
+        navigate("/login", { replace: true })
     }
 
     const sidebarContent = (
