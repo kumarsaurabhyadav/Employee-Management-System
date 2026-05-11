@@ -19,12 +19,16 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials "});
         }
 
-        if(role_type === "admin" && user.role !== "ADMIN"){
+        if(role_type === "admin" && !["ADMIN", "MANAGER"].includes(user.role)){
            return res.status(401).json({ error: "Not authiorized as admin" }); 
         }
 
         if(role_type === "employee" && user.role !== "EMPLOYEE"){
             return res.status(401).json({ error: "Not authorized as employee" });
+        }
+
+        if(role_type === "manager" && user.role !== "MANAGER"){
+            return res.status(401).json({ error: "Not authorized as manager" });
         }
 
         const isValid = await bcrypt.compare( password, user.password)
@@ -36,6 +40,7 @@ export const login = async (req, res) => {
             userId: user._id.toString(),
             role: user.role,
             email: user.email,
+            department: user.department,
 
         }
 

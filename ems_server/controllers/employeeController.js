@@ -7,9 +7,13 @@ import User from "../models/User.js";
 //GET/api/employees
 export const getEmployees = async (req, res)=>{
     try {
+        const session = req.session || {};
         const { department } = req.query;
         const where = {};
         if(department) where.department = department;
+        if (session.role === "MANAGER" && session.department) {
+            where.department = session.department;
+        }
 
         const employees = await Employee.find(where).sort({createdAt: -1}).populate("userId", "email role").lean();
 

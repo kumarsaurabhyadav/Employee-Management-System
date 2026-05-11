@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { Download } from 'lucide-react'
 import React from 'react'
 
-const PayslipList = ({ payslips, isAdmin }) => {
+const PayslipList = ({ payslips, showEmployeeColumn }) => {
     
     // 🚀 THE FIX: Sirf un payslips ko rakho jisme actual data (year & month) hai. Khali (Ghost) objects ko hata do.
     const validPayslips = payslips?.filter(payslip => payslip && payslip.year && payslip.month) || [];
@@ -22,10 +22,10 @@ const PayslipList = ({ payslips, isAdmin }) => {
                 <table className="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr>
-                            {isAdmin && <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 w-[25%]">Employee</th>}
-                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${isAdmin ? 'w-[20%]' : 'w-[25%]'}`}>Period</th>
-                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${isAdmin ? 'w-[20%]' : 'w-[25%]'}`}>Basic Salary</th>
-                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${isAdmin ? 'w-[20%]' : 'w-[25%]'}`}>Net Salary</th>
+                            {showEmployeeColumn && <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 w-[25%]">Employee</th>}
+                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${showEmployeeColumn ? 'w-[20%]' : 'w-[25%]'}`}>Period</th>
+                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${showEmployeeColumn ? 'w-[20%]' : 'w-[25%]'}`}>Basic Salary</th>
+                            <th className={`px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 ${showEmployeeColumn ? 'w-[20%]' : 'w-[25%]'}`}>Net Salary</th>
                             <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 text-center w-[15%]">Actions</th>
                         </tr>
                     </thead>
@@ -33,7 +33,7 @@ const PayslipList = ({ payslips, isAdmin }) => {
                         {/* 🚀 Yahan humne updated 'validPayslips' use kiya hai */}
                         {validPayslips.length === 0 ? (
                             <tr>
-                                <td colSpan={isAdmin ? 5 : 4} className="px-6 py-16 text-center">
+                                <td colSpan={showEmployeeColumn ? 5 : 4} className="px-6 py-16 text-center">
                                     <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">No payslips found</p>
                                 </td>
                             </tr>
@@ -41,7 +41,7 @@ const PayslipList = ({ payslips, isAdmin }) => {
                             validPayslips.map((payslip) => (
                                 <tr key={payslip._id || payslip.id} className="hover:bg-zinc-50 transition-colors group">
                                     
-                                    {isAdmin && <td className="px-6 py-5 text-sm font-bold text-zinc-900 truncate">{payslip.employee?.firstName} {payslip.employee?.lastName}</td>}
+                                    {showEmployeeColumn && <td className="px-6 py-5 text-sm font-bold text-zinc-900 truncate">{payslip.employee?.firstName} {payslip.employee?.lastName}</td>}
                                     
                                     <td className="px-6 py-5">
                                         <span className="inline-flex px-3 py-1.5 bg-zinc-100 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-md">

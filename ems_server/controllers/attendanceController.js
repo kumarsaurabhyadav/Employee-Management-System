@@ -1,6 +1,7 @@
 import { inngest } from "../inngest/index.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
+import ShiftPolicy from "../models/ShiftPolicy.js";
 
 //Clock in/out for employee
 //POST /api/attendance
@@ -8,7 +9,14 @@ export const clockInOut = async (req, res) => {
     try {
         const session = req.session;
         const employee = await Employee.findOne({ userId: session.userId })
-        if(!employee) return res.status(404).json({ error: "Employee not fount" });
+        if (!employee) {
+            if (session.role === "EMPLOYEE") {
+                return res.status(404).json({ error: "Employee not fount" });
+            }
+            return res.status(403).json({
+                error: "Attendance clock-in is only available for employee accounts with a linked profile.",
+            });
+        }
         if (employee.isDeleted) return res.status(403).json({ error: "Your account is deactivated. You cannot clock in/out" });
 
         const today = new Date();
@@ -22,7 +30,19 @@ export const clockInOut = async (req, res) => {
         const now = new Date();
 
         if(!existing){
-            const isLate = now.getHours() >= 9 && now.getMinutes() > 0;
+            const policy = await ShiftPolicy.findOne({ department: employee.department }).lean();
+            const shiftStartMinutes = policy?.shiftStartMinutes ?? 9 * 60;
+            const lateGraceMinutes = policy?.lateGraceMinutes ?? 15;
+
+            const shiftStart = new Date(today);
+            shiftStart.setHours(
+              Math.floor(shiftStartMinutes / 60),
+              shiftStartMinutes % 60,
+              0,
+              0,
+            );
+            const lateAfter = new Date(shiftStart.getTime() + lateGraceMinutes * 60 * 1000);
+            const isLate = now.getTime() > lateAfter.getTime();
             const attendance = await Attendance.create({
                 employeeId: employee._id,
                 date: today,
@@ -85,16 +105,30 @@ export const getAttendance = async (req, res) => {
 
         const session = req.session;
         const employee = await Employee.findOne({ userId: session.userId })
-        if(!employee) return res.status(404).json({ error: "Employee not fount" });
+        if (!employee) {
+            if (session.role === "EMPLOYEE") {
+                return res.status(404).json({ error: "Employee not fount" });
+            }
+            return res.json({
+                data: [],
+                employee: null,
+                shiftPolicy: null,
+                readOnly: true,
+            });
+        }
 
         const limit = parseInt(req.query.limit || 30);
         const history = await Attendance.find({ employeeId: employee._id })
             .sort({ date: -1 })
             .limit(limit)
 
+        const policy = await ShiftPolicy.findOne({ department: employee.department }).lean();
+
         return res.json({
             data: history,
-            employee: {isDeleted: employee.isDeleted}
+            employee: {isDeleted: employee.isDeleted},
+            shiftPolicy: policy,
+            readOnly: false,
         })
 
     } catch (error) {

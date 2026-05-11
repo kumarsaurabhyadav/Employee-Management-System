@@ -6,6 +6,7 @@ import { Download, Loader2Icon, Building2 } from 'lucide-react'
 import { jsPDF } from 'jspdf' 
 import { toPng } from 'html-to-image'
 import api from '../api/axios'
+import { withMinLoader } from '../utils/loaderDelay'
 
 const PrintPayslip = () => {
   const { id } = useParams()
@@ -19,14 +20,12 @@ const PrintPayslip = () => {
     const fetchPayslip = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/payslips/${id}`);
+        const res = await withMinLoader(() => api.get(`/payslips/${id}`));
         setPayslip(res.data?.data || res.data);
       } catch (error) {
         console.error('Failed to fetch payslip:', error);
       } finally {
-        setTimeout(() => {
-          setLoading(false);
-        }, 1000);
+        setLoading(false);
       }
     };
 
@@ -69,7 +68,7 @@ const PrintPayslip = () => {
     )
   }
 
-  const grossEarnings = (payslip.basicSalary || 0) + (payslip.allowances || 0);
+  const grossEarnings = (payslip.basicSalary || 0) + (payslip.allowances || 0) + (payslip.overtimePay || 0);
   const totalDeductions = payslip.deductions || 0;
 
   return (
@@ -152,6 +151,10 @@ const PrintPayslip = () => {
                     <div className="flex justify-between p-3 border-b border-zinc-200 text-sm">
                         <span className="text-zinc-600 font-medium">Allowances</span>
                         <span className="font-semibold text-zinc-900">{payslip.allowances?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between p-3 border-b border-zinc-200 text-sm">
+                        <span className="text-zinc-600 font-medium">Overtime ({(payslip.overtimeHours || 0).toFixed(2)}h)</span>
+                        <span className="font-semibold text-zinc-900">{(payslip.overtimePay || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                     </div>
                 </div>
                 <div className="bg-zinc-50 p-3 flex justify-between border-t border-zinc-300 font-bold text-sm">

@@ -2,6 +2,7 @@ import { Loader2Icon, LogIn, LogOut, CheckCircle2Icon } from 'lucide-react'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
+import { withMinLoader } from '../../utils/loaderDelay'
 
 const CheckinButton = ({ todayRecord, onAction }) => {
     const [loading, setLoading] = useState(false)
@@ -10,8 +11,7 @@ const CheckinButton = ({ todayRecord, onAction }) => {
         try {
             setLoading(true)
 
-            await api.post("/attendance")
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await withMinLoader(() => api.post("/attendance"))
 
             onAction()
 

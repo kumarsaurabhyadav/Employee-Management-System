@@ -7,6 +7,9 @@ import ChangePasswordModel from "../components/ChangePasswordModel"
 import { useAuth } from "../context/AuthContext"
 import toast from "react-hot-toast"
 import api from "../api/axios"
+import ShiftPolicySettings from "../components/settings/ShiftPolicySettings"
+import HolidaySettings from "../components/settings/HolidaySettings"
+import { withMinLoader } from "../utils/loaderDelay"
 
 const Settings = () => {
   const {user} = useAuth()
@@ -17,14 +20,8 @@ const Settings = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-
-      // Smooth loader delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const res = await api.get("/profile");
-
+      const res = await withMinLoader(() => api.get("/profile"));
       const profile = res.data;
-
       if (profile) {
         setProfile(profile);
       }
@@ -51,6 +48,11 @@ const Settings = () => {
       </div>
 
       {profile && <ProfileForm initialData={profile} onSuccess={fetchProfile}/>}
+
+      <div className="mt-6">
+        <HolidaySettings readOnly={user?.role !== "ADMIN"} />
+        {user?.role === "ADMIN" && <ShiftPolicySettings />}
+      </div>
       
       {/* Password Card */}
       <div className="bg-white border border-zinc-200 rounded-xl shadow-sm max-w-md p-6 flex items-center justify-between hover:border-zinc-300 transition-colors group">

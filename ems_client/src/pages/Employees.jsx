@@ -3,9 +3,16 @@ import { DEPARTMENTS } from '../assets/assets'
 import { Plus, Search, LayoutGridIcon, X, SlidersHorizontal, Users } from 'lucide-react'
 import EmployeeCard from '../components/EmployeeCard'
 import EmployeeForm from '../components/EmployeeForm'
-import api from '../api/axios' 
+import api from '../api/axios'
+import { useAuth } from '../context/AuthContext'
+import Loading from '../components/Loading'
+import { withMinLoader } from '../utils/loaderDelay'
 
 const Employees = () => {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "ADMIN"
+  const isManager = user?.role === "MANAGER"
+  const canEditRoster = isAdmin
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -13,10 +20,17 @@ const Employees = () => {
   const [editEmployee, setEditEmployee] = useState(null)
   const [showCreateModel, setShowCreateModel] = useState(false)
 
+  useEffect(() => {
+    if (isManager && user?.department) {
+      setSelectDept(user.department)
+    }
+  }, [isManager, user?.department])
+
   const fetchEmployees = useCallback(async ()=> {
+    setLoading(true)
     try {
       const url = selectDept ? `/employees?department=${selectDept}` : "/employees";
-      const res = await api.get(url)
+      const res = await withMinLoader(() => api.get(url))
       setEmployees(res.data)
     } catch (error) {
       console.error("Failed to fetch employees", error);
@@ -26,12 +40,7 @@ const Employees = () => {
   }, [selectDept])
 
   useEffect(() => {
-    setLoading(true)
-    const timer = setTimeout(() => {
-      fetchEmployees()
-    }, 1000)
-
-    return () => clearTimeout(timer)
+    fetchEmployees()
   }, [fetchEmployees])
 
   const filtered = employees.filter((emp)=>`${emp.firstName} ${emp.lastName} ${emp.position}`.toLowerCase().includes(search.toLowerCase()))
@@ -52,15 +61,19 @@ const Employees = () => {
                     </div>
                     <h1 className='text-3xl sm:text-4xl font-black text-zinc-900 tracking-tighter'>Employees</h1>
                 </div>
-                <p className='text-sm font-medium text-zinc-500 ml-1'>Manage your employees and organizational structure.</p>
+                <p className='text-sm font-medium text-zinc-500 ml-1'>
+                  {isManager ? "View employees in your department (read-only)." : "Manage your employees and organizational structure."}
+                </p>
                 </div>
                 
+                {canEditRoster && (
                 <button 
                     onClick={()=>setShowCreateModel(true)} 
                     className='px-6 py-3.5 rounded-2xl text-[13px] font-bold uppercase tracking-widest text-white bg-zinc-900 hover:bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2.5 w-full sm:w-auto justify-center active:scale-95'
                 >
                 <Plus size={18} strokeWidth={3} /> Add Employee
                 </button>
+                )}
             </div>
 
             {/* 🚀 PREMIUM UPGRADE 2: Unified Glass Control Bar */}
@@ -84,11 +97,12 @@ const Employees = () => {
                 <div className="relative w-full sm:w-auto flex items-center bg-zinc-50/50 sm:bg-transparent rounded-xl sm:rounded-none px-2 sm:px-0 mt-2 sm:mt-0">
                     <SlidersHorizontal className="absolute left-4 sm:left-2 text-zinc-400 w-4 h-4" />
                     <select 
-                        value={selectDept} 
+                        value={isManager && user?.department ? user.department : selectDept} 
                         onChange={(e)=>setSelectDept(e.target.value)} 
-                        className='w-full sm:w-48 pl-11 sm:pl-9 pr-8 py-3 bg-transparent border-none focus:ring-0 text-sm font-bold text-zinc-700 appearance-none cursor-pointer'
+                        disabled={isManager}
+                        className='w-full sm:w-48 pl-11 sm:pl-9 pr-8 py-3 bg-transparent border-none focus:ring-0 text-sm font-bold text-zinc-700 appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed'
                     >
-                        <option value="">All Departments</option>
+                        {!isManager && <option value="">All Departments</option>}
                         {DEPARTMENTS.map((deptName)=>(
                             <option key={deptName} value={deptName}>{deptName}</option>
                         ))}
@@ -98,18 +112,7 @@ const Employees = () => {
 
             {/* -------- EMPLOYEE LIST & LOADER -------- */}
             {loading ? (
-                <div className='flex flex-col items-center justify-center py-32'>
-                    <div className='relative flex items-center justify-center'>
-                        <div className='w-14 h-14 border-[3px] border-zinc-100 border-t-zinc-900 border-r-zinc-900/30 rounded-full animate-spin'></div>
-                        <div className='absolute inset-0 flex items-center justify-center'>
-                            <Users className='w-5 h-5 text-zinc-300 animate-pulse' />
-                        </div>
-                    </div>
-                    <div className='mt-6 flex flex-col items-center'>
-                        <p className='text-[11px] font-bold tracking-widest text-zinc-900 uppercase'>Syncing Data</p>
-                        <p className='text-sm font-medium text-zinc-500 mt-1 animate-pulse'>Fetching employee records...</p>
-                    </div>
-                </div>
+                <Loading embedded />
             ) : (
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6 gap-5'>
                 {filtered.length === 0 ? (
@@ -132,7 +135,8 @@ const Employees = () => {
                             key={emp._id || emp.id} 
                             employee={emp} 
                             onDelete={fetchEmployees} 
-                            onEdit={(emp)=>setEditEmployee(emp)} 
+                            onEdit={(emp)=>setEditEmployee(emp)}
+                            readOnly={!canEditRoster}
                         />
                     ))
                 )}

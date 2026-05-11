@@ -2,6 +2,10 @@ import { Inngest } from "inngest";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 import LeaveApplication from "../models/LeaveApplication.js";
+import Holiday from "../models/Holiday.js";
+import LeaveBalance from "../models/LeaveBalance.js";
+import Payslip from "../models/Payslip.js";
+import Notification from "../models/Notification.js";
 import sendEmail from "../config/nodemailer.js";
 
 // Create a client to send and receive events
@@ -28,6 +32,18 @@ const autoCheckOut = inngest.createFunction(
     if (!attendance?.checkOut) {
       //get Employee data
       const employee = await Employee.findById(employeeId);
+
+      // If employee is on approved leave today, don't send check-out reminders.
+      const dayStart = new Date(attendance.date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const onLeave = await LeaveApplication.exists({
+        employeeId,
+        status: "APPROVED",
+        startDate: { $lte: dayEnd },
+        endDate: { $gte: dayStart },
+      });
+      if (onLeave) return;
 
       //send remainder email
       await sendEmail({
@@ -58,22 +74,6 @@ const autoCheckOut = inngest.createFunction(
         <p style="font-size: 16px;">EMS</p>
     </div>`,
       });
-
-      //after 10 hours, mark attendance as checked out with status "LATE"
-      await step.sleepUntil(
-        "wait-for-the-1-hour",
-        new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
-      );
-
-      attendance = await Attendance.findById(attendanceId);
-      if (!attendance?.checkOut) {
-        attendance.checkOut =
-          new Date(attendance.checkIn).getTime() + 4 * 60 * 60 * 1000;
-        attendance.workingHours = 4;
-        attendance.dayType = "Half Day";
-        attendance.status = "LATE";
-        await attendance.save();
-      }
     }
   },
 );
@@ -189,6 +189,41 @@ const attendanceReminderCron = inngest.createFunction(
         !checkedInIds.includes(emp._id.toString()),
     );
 
+    // Step 5.25: Skip reminders on holidays
+    const isHoliday = await step.run("check-holiday", async () => {
+      const dayStart = new Date(today.startUTC);
+      dayStart.setHours(0, 0, 0, 0);
+      const exists = await Holiday.exists({ date: dayStart });
+      return Boolean(exists);
+    });
+    if (isHoliday) {
+      return {
+        totalActive: activeEmployees.length,
+        onLeave: onLeaveIds.length,
+        checkedIn: checkedInIds.length,
+        absent: absentEmployees.length,
+        skipped: "HOLIDAY",
+      };
+    }
+
+    // Step 5.5: Skip reminders on weekends (Asia/Kolkata)
+    const isWeekend = await step.run("check-weekend", () => {
+      const local = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
+      );
+      const day = local.getDay(); // 0 Sun, 6 Sat
+      return day === 0 || day === 6;
+    });
+    if (isWeekend) {
+      return {
+        totalActive: activeEmployees.length,
+        onLeave: onLeaveIds.length,
+        checkedIn: checkedInIds.length,
+        absent: absentEmployees.length,
+        skipped: "WEEKEND",
+      };
+    }
+
     // Step 6: Send reminder emails
     if (absentEmployees.length > 0) {
       await step.run("send-reminder-emails", async () => {
@@ -227,9 +262,171 @@ const attendanceReminderCron = inngest.createFunction(
   },
 );
 
+// cron: monthly accrual of leave balances at 00:05 IST on 1st
+const leaveAccrualCron = inngest.createFunction(
+  {
+    id: "leave-accrual-cron",
+    triggers: [{ cron: "TZ=Asia/Kolkata 5 0 1 * *" }],
+  },
+  async ({ step }) => {
+    const result = await step.run("apply-accrual", async () => {
+      const balances = await LeaveBalance.find().lean();
+      let updated = 0;
+
+      for (const b of balances) {
+        const next = {
+          annual: (b.annual || 0) + (b.accrualMonthly?.annual || 0),
+          casual: (b.casual || 0) + (b.accrualMonthly?.casual || 0),
+          sick: (b.sick || 0) + (b.accrualMonthly?.sick || 0),
+        };
+
+        // Soft caps to avoid runaway; uses carryForwardCap as max balance
+        next.annual = Math.min(next.annual, b.carryForwardCap?.annual ?? 30);
+        next.casual = Math.min(next.casual, b.carryForwardCap?.casual ?? 12);
+        next.sick = Math.min(next.sick, b.carryForwardCap?.sick ?? 12);
+
+        await LeaveBalance.updateOne(
+          { _id: b._id },
+          { $set: { annual: next.annual, casual: next.casual, sick: next.sick } },
+        );
+        updated += 1;
+      }
+
+      return { updated };
+    });
+
+    return result;
+  },
+);
+
+// Event: payslip generated -> email employee
+const payslipGeneratedEmail = inngest.createFunction(
+  {
+    id: "payslip-generated-email",
+    triggers: [{ event: "payslip/generated" }],
+  },
+  async ({ event, step }) => {
+    const { payslipId } = event.data;
+
+    const data = await step.run("fetch-payslip", async () => {
+      const payslip = await Payslip.findById(payslipId).populate("employeeId").lean();
+      if (!payslip) return null;
+      return payslip;
+    });
+
+    if (!data) return { ok: false };
+
+    const employee = data.employeeId;
+    const monthLabel = `${data.month}/${data.year}`;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const viewUrl = `${clientUrl}/print/payslips/${data._id.toString()}`;
+
+    await step.run("send-email", async () => {
+      await sendEmail({
+        to: employee?.email,
+        subject: `Payslip generated (${monthLabel})`,
+        body: `
+          <div style="max-width: 600px; font-family: Arial, sans-serif;">
+            <h2>Hi ${employee?.firstName || "there"},</h2>
+            <p>Your payslip for <strong>${monthLabel}</strong> has been generated.</p>
+            <p style="margin: 24px 0;">
+              <a href="${viewUrl}" style="background:#111827;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;display:inline-block;">
+                View Payslip
+              </a>
+            </p>
+            <p style="font-size: 14px; color: #666;">If you have questions, contact HR.</p>
+          </div>
+        `,
+      });
+    });
+
+    await step.run("create-notification", async () => {
+      const userId = employee?.userId;
+      if (!userId) return;
+      await Notification.create({
+        userId,
+        type: "PAYSLIP",
+        title: "Payslip generated",
+        body: `Your payslip for ${monthLabel} is available.`,
+        meta: { payslipId: data._id.toString() },
+      });
+    });
+
+    return { ok: true };
+  },
+);
+
+// cron: daily unread notifications digest at 19:00 IST
+const notificationsDigestCron = inngest.createFunction(
+  {
+    id: "notifications-digest-cron",
+    triggers: [{ cron: "TZ=Asia/Kolkata 0 19 * * *" }],
+  },
+  async ({ step }) => {
+    const unread = await step.run("fetch-unread", async () => {
+      const rows = await Notification.find({ readAt: null })
+        .sort({ createdAt: -1 })
+        .limit(500)
+        .lean();
+      return rows;
+    });
+
+    // group by userId
+    const byUser = new Map();
+    for (const n of unread) {
+      const key = n.userId.toString();
+      const arr = byUser.get(key) || [];
+      arr.push(n);
+      byUser.set(key, arr);
+    }
+
+    // naive digest: skip if no ADMIN_EMAIL/CLIENT_URL; email only top 10 items
+    await step.run("send-digests", async () => {
+      const User = (await import("../models/User.js")).default;
+      const users = await User.find({ _id: { $in: Array.from(byUser.keys()) } }).lean();
+      const userById = new Map(users.map((u) => [u._id.toString(), u]));
+
+      const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+
+      const tasks = Array.from(byUser.entries()).map(async ([uid, items]) => {
+        const u = userById.get(uid);
+        if (!u?.email) return;
+        const lines = items
+          .slice(0, 10)
+          .map((i) => `<li><strong>${i.title}</strong>: ${i.body}</li>`)
+          .join("");
+
+        await sendEmail({
+          to: u.email,
+          subject: `You have ${items.length} unread notifications`,
+          body: `
+            <div style="max-width: 600px; font-family: Arial, sans-serif;">
+              <h2>Notification digest</h2>
+              <p>You have <strong>${items.length}</strong> unread notifications.</p>
+              <ul>${lines}</ul>
+              <p style="margin: 24px 0;">
+                <a href="${clientUrl}/dashboard" style="background:#111827;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;display:inline-block;">
+                  Open EMS
+                </a>
+              </p>
+            </div>
+          `,
+        });
+      });
+
+      await Promise.all(tasks);
+    });
+
+    return { users: byUser.size, notifications: unread.length };
+  },
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   autoCheckOut,
   leaveApplicationReminder,
   attendanceReminderCron,
+  leaveAccrualCron,
+  payslipGeneratedEmail,
+  notificationsDigestCron,
 ];

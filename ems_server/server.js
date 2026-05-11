@@ -10,6 +10,11 @@ import attendaceRouter from "./routes/attendanceRoutes.js";
 import leaveRouter from "./routes/leaveRoutes.js";
 import payslipRouter from "./routes/payslipsRoutes.js";
 import dashboardRouter from "./routes/dashboardRoutes.js";
+import shiftRouter from "./routes/shiftPolicyRoutes.js";
+import holidayRouter from "./routes/holidayRoutes.js";
+import correctionRouter from "./routes/correctionRoutes.js";
+import overtimeRouter from "./routes/overtimeRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
 import { serve } from "inngest/express";
 import { inngest, functions } from "./inngest/index.js"
 
@@ -31,6 +36,11 @@ app.use("/api/attendance", attendaceRouter)
 app.use("/api/leave", leaveRouter)
 app.use("/api/payslips", payslipRouter)
 app.use("/api/dashboard", dashboardRouter)
+app.use("/api/shifts", shiftRouter)
+app.use("/api/holidays", holidayRouter)
+app.use("/api/corrections", correctionRouter)
+app.use("/api/overtime", overtimeRouter)
+app.use("/api/notifications", notificationRouter)
 app.use("/api/inngest", serve({ client: inngest, functions }));
 
 

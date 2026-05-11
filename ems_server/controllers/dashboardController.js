@@ -10,22 +10,35 @@ import Payslip from "../models/Payslip.js";
 export const getDashboard = async (req, res) => {
     try {
         const session = req.session;
-        if(session.role === "ADMIN" ){
+        if(session.role === "ADMIN" || session.role === "MANAGER"){
+            const isManager = session.role === "MANAGER";
+            const employeeWhere = { isDeleted: { $ne: true } };
+            if (isManager && session.department) {
+                employeeWhere.department = session.department;
+            }
+
+            const employees = await Employee.find(employeeWhere).select("_id").lean();
+            const employeeIds = employees.map((e) => e._id);
+
             const [totalEmployees, todayAttendance, pendingLeaves] = await Promise.all([
-                Employee.countDocuments({isDeleted: {$ne: true}}),
+                Employee.countDocuments(employeeWhere),
                 Attendance.countDocuments({
+                    ...(isManager ? { employeeId: { $in: employeeIds } } : {}),
                     date: {
                         $gte: new Date(new Date().setHours(0,0,0,0)),
                         $lt: new Date(new Date().setHours(24,0,0,0)),
                     }
                 }),
-                LeaveApplication.countDocuments({status: "PENDING"})
+                LeaveApplication.countDocuments({
+                    status: "PENDING",
+                    ...(isManager ? { employeeId: { $in: employeeIds } } : {}),
+                })
             ])
 
             return res.json({
-                role: "ADMIN",
+                role: session.role,
                 totalEmployees,
-                totalDepartments: DEPARTMENTS.length,
+                totalDepartments: isManager && session.department ? 1 : DEPARTMENTS.length,
                 todayAttendance,
                 pendingLeaves
             })

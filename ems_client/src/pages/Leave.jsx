@@ -7,6 +7,7 @@ import ApplyLeaveModel from '../components/leave/ApplyLeaveModel'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
+import { withMinLoader } from '../utils/loaderDelay'
 
 const Leave = () => {
   const {user} = useAuth()
@@ -14,20 +15,35 @@ const Leave = () => {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false);
-  const isAdmin = user?.role === "ADMIN";
+  const [balance, setBalance] = useState(null);
+  const isApprover = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const isEmployeeOnly = user?.role === "EMPLOYEE";
 
   const fetchLeaves = useCallback(async () => {
     try {
         setLoading(true)
 
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const res = await withMinLoader(async () => {
+          const leaveRes = await api.get('/leave')
+          let balanceData = null
+          if (isEmployeeOnly) {
+            try {
+              const bal = await api.get("/leave/balance")
+              balanceData = bal.data?.data || null
+            } catch {
+              balanceData = null
+            }
+          }
+          return { leaveRes, balanceData }
+        })
 
-        const res = await api.get('/leave')
+        setLeaves(res.leaveRes.data.data || [])
+        setBalance(isEmployeeOnly ? res.balanceData : null)
 
-        setLeaves(res.data.data || [])
-
-        if (res.data.employee?.isDeleted) {
+        if (res.leaveRes.data.employee?.isDeleted) {
             setIsDeleted(true)
+        } else {
+            setIsDeleted(false)
         }
 
     } catch (error) {
@@ -37,7 +53,7 @@ const Leave = () => {
         setLoading(false)
     }
 
-}, [])
+}, [isEmployeeOnly])
 
   useEffect(() => {
     fetchLeaves()
@@ -51,10 +67,14 @@ const Leave = () => {
   const annualCount = approvedLeaves.filter((l) => l.type === "ANNUAL").length;
 
   const leaveStats = [
-    { label: "Sick Leave", value: sickCount, icon: ThermometerIcon },
-    { label: "Casual Leave", value: casualCount, icon: UmbrellaIcon },
-    { label: "Annual Leave", value: annualCount, icon: PalmtreeIcon },
+    { label: "Sick Leave", value: balance?.sick ?? sickCount, icon: ThermometerIcon, suffix: "Left" },
+    { label: "Casual Leave", value: balance?.casual ?? casualCount, icon: UmbrellaIcon, suffix: "Left" },
+    { label: "Annual Leave", value: balance?.annual ?? annualCount, icon: PalmtreeIcon, suffix: "Left" },
   ]
+
+  const subtitle = isApprover
+    ? "Review and approve team leave requests"
+    : "Manage your leave balance and applications";
 
   return (
     <div className='animate-fade-in'>
@@ -63,9 +83,9 @@ const Leave = () => {
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8'>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Leave Management</h1>
-          <p className="text-sm font-medium text-zinc-500 mt-1">{!isAdmin ? 'Manage leave applications' : 'Your leave history and requests'}</p>
+          <p className="text-sm font-medium text-zinc-500 mt-1">{subtitle}</p>
         </div>
-        {!isAdmin && !isDeleted && (
+        {isEmployeeOnly && !isDeleted && (
           <button onClick={() => setShowModal(true)} className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg w-full sm:w-auto justify-center shadow-sm'>
             <PlusIcon className='w-4 h-4' /> Apply for Leave
           </button>
@@ -73,7 +93,7 @@ const Leave = () => {
       </div>
 
       {/* Premium Stats Cards - Exact Zinc Theme Match */}
-      {!isAdmin && (
+      {isEmployeeOnly && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
           {leaveStats.map((s) => (
             <div key={s.label} className="bg-white rounded-2xl border border-zinc-200/80 p-5 sm:p-6 flex items-center gap-5 relative overflow-hidden group hover:border-zinc-300 transition-all duration-200 shadow-sm hover:shadow-md">
@@ -89,7 +109,7 @@ const Leave = () => {
               <div>
                 <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">{s.label}</p>
                 <p className="text-2xl font-bold text-zinc-900 tracking-tight flex items-baseline gap-1.5">
-                  {s.value} <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Taken</span>
+                  {s.value} <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{s.suffix}</span>
                 </p>
               </div>
             </div>
@@ -98,7 +118,7 @@ const Leave = () => {
       )}
 
       {/* Leave History Table Component */}
-      <LeaveHistory leaves={leaves} isAdmin={isAdmin} onUpdate={fetchLeaves}/>
+      <LeaveHistory leaves={leaves} isAdmin={isApprover} onUpdate={fetchLeaves}/>
       
       {/* Premium Slide-Up Modal */}
       <ApplyLeaveModel open={showModal} onClose={()=> setShowModal(false)} onSuccess={fetchLeaves}/>

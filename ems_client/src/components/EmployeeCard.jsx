@@ -3,7 +3,7 @@ import React from 'react'
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
-const EmployeeCard = ({employee, onDelete, onEdit}) => {
+const EmployeeCard = ({ employee, onDelete, onEdit, readOnly = false }) => {
 
     const handleDelete = async () => {
         if(!confirm ("Are you sure you want to delete this employee?"))
@@ -45,7 +45,7 @@ const EmployeeCard = ({employee, onDelete, onEdit}) => {
         </div>
 
         {/* Hover Action Buttons - NO BLACK OVERLAY, JUST FLOATING BUTTONS */}
-        {!employee.isDeleted &&(
+        {!employee.isDeleted && !readOnly &&(
             // Pointer-events-none parent taaki hover interrupt na ho
             <div className='absolute inset-0 flex items-end justify-center pb-6 gap-3 pointer-events-none overflow-hidden'>
                 

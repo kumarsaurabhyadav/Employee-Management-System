@@ -2,6 +2,7 @@ import { Calculator, CalendarDays, DollarSign, Plus, User, X, Loader2 } from 'lu
 import React, { useState } from 'react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import { withMinLoader } from '../../utils/loaderDelay'
 
 const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -26,10 +27,7 @@ const handleSubmit = async (e) => {
     const data = Object.fromEntries(formData.entries());
 
     try {
-        // 1 sec loader before API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        await api.post('/payslips', data);
+        await withMinLoader(() => api.post('/payslips', data));
 
         toast.success('Payslip generated successfully');
 
