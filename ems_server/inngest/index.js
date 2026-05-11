@@ -138,8 +138,8 @@ const attendanceReminderCron = inngest.createFunction(
     //get today date range
     const today = await step.run("get-today-date", () => {
       const startUTC = new Date(
-        new Date().toLocaleDateString("en-CA", { timeZone: "Asia/kolkata" }) +
-          "T00:00:00 + 05:30",
+        new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) +
+          "T00:00:00+05:30",
       );
       const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60 * 1000);
       return { startUTC: startUTC.toISOString(), endUTC: endUTC.toISOString() };
@@ -214,6 +214,7 @@ const attendanceReminderCron = inngest.createFunction(
         });
       });
     }
+    await Promise.all(emailPromises);
     return {
       totalActive: activeEmployees.length,
       onLeave: onLeaveIds.length,

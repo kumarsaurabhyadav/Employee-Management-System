@@ -27,7 +27,7 @@ export const createLeave = async (req, res) => {
         return res.status(400).json({ error: "Leave dates must be in the future" });
         }
 
-        if(new Date(endDate) <= today || new Date(startDate) <= today){
+        if(new Date(endDate) < new Date(startDate)){
         return res.status(400).json({ error: "End date cannot be before start date" });
         }
 
@@ -42,7 +42,7 @@ export const createLeave = async (req, res) => {
 
         await inngest.send({
             name: "leave/pending",
-            ddata: {LeaveApplicationId: leave._id,}
+            data: { LeaveApplicationId: leave._id }
         })
 
         return res.json({ success: true, data: leave })
@@ -98,7 +98,11 @@ export const updateLeaveStatus = async (req, res) => {
         if(!["APPROVED", "REJECTED", "PENDING"].includes(status)){
             return res.status(400).json({ error: "Invalid status" });
         }
-        const leave = await LeaveApplication.findByIdAndUpdate(req.param.id, {status}, {returnDocument: "after"})
+        const leave = await LeaveApplication.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { returnDocument: "after" }
+        )
         return res.json({success: true, data:leave})
         
     } catch (error) {

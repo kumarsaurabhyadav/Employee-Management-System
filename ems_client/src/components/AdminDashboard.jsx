@@ -66,9 +66,9 @@ const AdminDashboard = ({data}) => {
 
             {/* Admin Quick Actions (Dashboard ko complete feel dene ke liye) */}
             <div className='flex flex-col sm:flex-row gap-4'>
-                <Link to='/employee/add' className='btn-primary group inline-flex items-center justify-center gap-2'>
+                <Link to='/employees' className='btn-primary group inline-flex items-center justify-center gap-2'>
                     <PlusIcon className='w-4 h-4' />
-                    Add New Employee
+                    Add New Employee 
                 </Link>
 
                 <Link to='/leave' className='btn-secondary hover:shadow-sm inline-flex items-center justify-center gap-2 group'>

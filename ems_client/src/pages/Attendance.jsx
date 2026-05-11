@@ -5,25 +5,51 @@ import { AlertCircleIcon } from 'lucide-react'
 import CheckinButton from '../components/attendance/CheckinButton'
 import AttendanceStats from '../components/attendance/AttendanceStats'
 import AttendanceHistory from '../components/attendance/AttendanceHistory'
+import api from '../api/axios'
+import {toast} from 'react-hot-toast'
 
 const Attendance = () => {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [isDeleted, setIsDeleted] = useState(false)
 
-  const fetchData = useCallback(async ()=>{
-    setLoading(true)
-    setHistory(dummyAttendanceData)
-    setTimeout(()=>{
-      setLoading(false)
-    },1000)
-  },[])
+  const fetchData = useCallback(async () => {
+  setLoading(true)
+
+  try {
+    const res = await api.get("/attendance")
+
+    // 1 second loader delay
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    const json = res.data
+
+    setHistory(json.data || [])
+
+    if (json.employee?.isDeleted) {
+      setIsDeleted(true)
+    } else {
+      setIsDeleted(false)
+    }
+
+  } catch (error) {
+    toast.error(error?.response?.data?.error || error?.message)
+  } finally {
+    setLoading(false)
+  }
+}, [])
 
   useEffect(()=>{
     fetchData()
   },[fetchData])
 
-  if(loading) return <Loading />
+  if (loading) {
+  return (
+    <div className='min-h-[60vh] flex items-center justify-center'>
+      <Loading />
+    </div>
+  )
+}
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)

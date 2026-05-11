@@ -1,5 +1,7 @@
 import { Loader2Icon, LockIcon, X } from 'lucide-react'
 import React, { useState } from 'react'
+import api from '../api/axios'
+
 
 const ChangePasswordModel = ({ open, onClose }) => {
     const [loading, setLoading] = useState(false)
@@ -7,19 +9,46 @@ const ChangePasswordModel = ({ open, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        
         setLoading(true)
-        
-        // Dummy API call
-        setTimeout(() => {
+        setMessage({ type: "", text: "" });
+
+        const formData = new FormData(e.currentTarget)
+        const currentPassword = formData.get("currentPassword")
+        const newPassword = formData.get("newPassword")
+
+        try {
+            const { data } = await api.post("/auth/change-password", {
+                currentPassword,
+                newPassword,
+            })
+
+            if (!data.success) {
+                throw new Error(data.error || "Failed")
+            }
+
+            setMessage({
+                type: "success",
+                text: "Password updated successfully",
+            })
+
+            e.target.reset()
+
+            setTimeout(() => {
+                onClose()
+            }, 1500)
+
+        } catch (error) {
+            setMessage({
+                type: "error",
+                text: error.response?.data?.message || error.message,
+            })
+        } finally {
             setLoading(false)
-            onClose()
-        }, 1500)
+        }
     }
 
     if (!open) return null
 
-    // 🔥 Premium Input Styling
     const inputClass = "w-full px-4 py-3 bg-zinc-50/80 border border-zinc-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all text-sm text-black placeholder:text-zinc-400 hover:bg-zinc-100/50";
 
     return (

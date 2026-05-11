@@ -1,5 +1,7 @@
 import { Calculator, CalendarDays, DollarSign, Plus, User, X, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
+import api from '../../api/axios'
+import toast from 'react-hot-toast'
 
 const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -16,19 +18,29 @@ const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
         </button>
     )
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        // Button ke andar spinner ghoomega
-        setLoading(true);
-        
-        // Dummy API call (Yahan actual API ayegi)
-        setTimeout(() => {
-            setLoading(false);
-            if (onSuccess) onSuccess();
-            setIsOpen(false);
-        }, 1500);
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        // 1 sec loader before API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        await api.post('/payslips', data);
+
+        toast.success('Payslip generated successfully');
+
+        if (onSuccess) onSuccess();
+        setIsOpen(false);
+    } catch (err) {
+        toast.error(err.response?.data?.error || err?.message || 'Something went wrong');
+    } finally {
+        setLoading(false);
     }
+}
 
     // Shared Premium Input Class
     const inputClass = "w-full px-4 py-3 bg-zinc-50/80 border border-zinc-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all text-sm text-black placeholder:text-zinc-400 hover:bg-zinc-100/50 disabled:opacity-60 disabled:cursor-not-allowed";
@@ -62,11 +74,18 @@ const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
                         </label>
                         <select id="employeeId" name="employeeId" required className={inputClass} defaultValue="" disabled={loading}>
                             <option value="" disabled>Select Employee</option>
-                            {employees?.map((e) => (
-                                <option key={e._id} value={e.employee?._id}>
-                                    {e.employee?.firstName} {e.employee?.lastName} - {e.employee?.department}
-                                </option>
-                            ))}
+                            {employees?.map((e) => {
+                                const employeeData = e.employee || e;
+
+                                return (
+                                    <option
+                                        key={employeeData?._id}
+                                        value={employeeData?._id}
+                                    >
+                                        {employeeData?.firstName || 'Unknown'} {employeeData?.lastName || ''} {employeeData?.department ? `- ${employeeData.department}` : ''}
+                                    </option>
+                                )
+                            })}
                         </select>
                     </div>
 
@@ -105,7 +124,7 @@ const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
                             <label className="flex items-center gap-2 mb-2 text-[12px] font-bold text-zinc-800 uppercase tracking-wide">
                                 <Calculator className="w-4 h-4 text-zinc-400" /> Allowance
                             </label>
-                            <input type="number" name='allowance' defaultValue='0' className={inputClass} disabled={loading}/>
+                            <input type="number" name='allowances' defaultValue='0' className={inputClass} disabled={loading}/>
                         </div>
 
                         <div>

@@ -1,5 +1,6 @@
 import { Loader2, Save, User } from 'lucide-react'
 import React, { useState } from 'react'
+import api from '../api/axios'
 
 const ProfileForm = ({ initialData, onSuccess }) => {
     const [loading, setLoading] = useState(false)
@@ -7,11 +8,27 @@ const ProfileForm = ({ initialData, onSuccess }) => {
     const [message, setMessage] = useState("")
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
-        // API submit logic
-    }
+    e.preventDefault();
+    setLoading(true)
+    setError("")
+    setMessage("")
 
-    // Shared input styles - Explicit solid zinc-200 borders added
+    const formData = new FormData(e.currentTarget)
+
+    try {
+        await api.post("/profile", formData)
+
+        setMessage("Profile updated successfully")
+
+        onSuccess?.()
+    } catch (err) {
+        setError(err.response?.data?.error || err.message);
+    } finally {
+        setLoading(false)
+    }
+}
+
+    
     const inputBaseClass = "w-full px-4 py-3 border rounded-xl text-sm transition-all focus:outline-none";
     const disabledInputClass = `${inputBaseClass} bg-zinc-50 border-zinc-200 text-zinc-500 cursor-not-allowed`;
     const activeInputClass = `${inputBaseClass} bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 hover:border-zinc-300 hover:bg-zinc-50/50 focus:ring-1 focus:ring-black focus:border-black`;

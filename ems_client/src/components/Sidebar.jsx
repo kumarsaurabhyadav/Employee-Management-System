@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import { href, Link, useLocation } from 'react-router-dom'
 import { dummyProfileData } from '../assets/assets'
-import { CalendarIcon, ChevronRightIcon, DollarSignIcon, FileTextIcon, LayoutGridIcon, LogOutIcon, MenuIcon, SettingsIcon, UserIcon, XIcon } from 'lucide-react'
+import { CalendarIcon, ChevronRightIcon, DollarSignIcon, FileTextIcon, LayoutGridIcon, Loader2, LogOutIcon, MenuIcon, SettingsIcon, UserIcon, XIcon } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import api from '../api/axios'
 
 const Sidebar = () => {
     const { pathname } = useLocation()
     const [userName, setUserName] = useState('')
     const [mobileOpen, setMobileOpen] = useState(false)
 
+    const { user, loading, logout} = useAuth()
+
     useEffect(() => {
-        setUserName(dummyProfileData.firstName + " " + dummyProfileData.lastName)
+        api.get("/profile").then(({data})=>{
+            if(data.firstName) setUserName(`${data.firstName} ${data.lastName || ""}`.trim());
+        })
     }, [])
 
     //Close mobile sidebar on route change
@@ -17,8 +23,7 @@ const Sidebar = () => {
         setMobileOpen(false)
     }, [pathname])
 
-    // LOGIC 100% UNTOUCHED
-    const role = "" || "empoloyee"
+    const role = user?.role;
     const navItems = [
         {name: "Dashboard", href: "/dashboard", icon: LayoutGridIcon},
         role === "ADMIN" ?
@@ -30,6 +35,7 @@ const Sidebar = () => {
     ]
 
     const handleLogout = () => {
+        logout()
         window.location.href = "/login"
     }
 
@@ -82,24 +88,43 @@ const Sidebar = () => {
 
             {/* Navigation List - Custom Scrollbar Hide Classes Added */}
             <div className='flex-1 px-3 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
-                {navItems.map((item)=>{
-                    const isActive = pathname.startsWith(item.href)
-                    return(
-                        <Link key={item.name} to={item.href} className={`group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium transition-all duration-200 relative ${isActive ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"}`}>
-                        
-                        {/* 1. Titanium Gradient Active Line */}
-                        {isActive && <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-linear-to-b from-zinc-200 to-zinc-500 shadow-[0_0_8px_rgba(255,255,255,0.3)]' />}
-                        
-                        {/* 2. Micro-animation: Icon slight move on hover */}
-                        <item.icon className = {`w-4 h-4 shrink-0 transition-all duration-200 ${isActive ? "text-zinc-200" : "text-zinc-500 group-hover:text-zinc-300 group-hover:scale-110"}`}/>
-                        
-                        {/* 3. Micro-animation: Text slight slide on hover */}
-                        <span className={`flex-1 transition-transform duration-200 ${!isActive && 'group-hover:translate-x-0.5'}`}>{item.name}</span>
-                        
-                        {isActive && <ChevronRightIcon className='w-3.5 h-3.5 text-zinc-500'/>}
-                        </Link>
-                    )
-                })}
+                {loading ? (
+                    <div className='px-3 py-3 flex items-center gap-3 text-slate-500'>
+                        <Loader2 className='animate-spin w-4 h-4'/>
+                        <span className='text-sm'>Loading...</span>
+                    </div>
+                ) : (
+                    <>
+                        {navItems.map((item) => {
+                            const isActive = pathname.startsWith(item.href)
+
+                            return (
+                                <Link
+                                    key={item.name}
+                                    to={item.href}
+                                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium transition-all duration-200 relative ${isActive ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"}`}
+                                >
+                                    {/* 1. Titanium Gradient Active Line */}
+                                    {isActive && (
+                                        <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-linear-to-b from-zinc-200 to-zinc-500 shadow-[0_0_8px_rgba(255,255,255,0.3)]' />
+                                    )}
+
+                                    {/* 2. Micro-animation: Icon slight move on hover */}
+                                    <item.icon
+                                        className={`w-4 h-4 shrink-0 transition-all duration-200 ${isActive ? "text-zinc-200" : "text-zinc-500 group-hover:text-zinc-300 group-hover:scale-110"}`}
+                                    />
+
+                                    {/* 3. Micro-animation: Text slight slide on hover */}
+                                    <span className={`flex-1 transition-transform duration-200 ${!isActive ? 'group-hover:translate-x-0.5' : ''}`}>
+                                        {item.name}
+                                    </span>
+
+                                    {isActive && <ChevronRightIcon className='w-3.5 h-3.5 text-zinc-500' />}
+                                </Link>
+                            )
+                        })}
+                    </>
+                )}
             </div>
 
             {/* Logout */}

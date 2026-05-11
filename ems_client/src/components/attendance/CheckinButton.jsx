@@ -1,34 +1,44 @@
 import { Loader2Icon, LogIn, LogOut, CheckCircle2Icon } from 'lucide-react'
 import React, { useState } from 'react'
+import toast from 'react-hot-toast'
+import api from '../../api/axios'
 
-const CheckinButton = ({todayRecord, onAction}) => {
+const CheckinButton = ({ todayRecord, onAction }) => {
     const [loading, setLoading] = useState(false)
 
     const handleAttendance = async () => {
-        setLoading(true)
-        setTimeout(()=>{
-            setLoading(false)
+        try {
+            setLoading(true)
+
+            await api.post("/attendance")
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+
             onAction()
-        },1000)
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error?.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     // 1. WORK DAY COMPLETED STATE 
     if(todayRecord?.checkOut){
         return(
-            <div className='flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-zinc-200 shadow-sm animate-fade-in'>
+            <div className='flex flex-col items-center justify-center p-8 mb-6 bg-white rounded-2xl border border-zinc-200 shadow-sm animate-fade-in'>
                 
                 {/* Sleek Success Icon */}
                 <div className='w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4'>
                     <CheckCircle2Icon className='w-7 h-7 text-emerald-500' />
                 </div>
                 
-                <h3 className='text-lg font-bold text-zinc-900 tracking-tight'>Work Day Completed</h3>
-                <p className='text-zinc-500 text-[13px] font-medium mt-1'>Great job today! See you tomorrow.</p>
+                <h3 className='text-lg font-bold text-zinc-900 tracking-tight uppercase'>Day Completed</h3>
+                <p className='text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-1'>Great job! See you tomorrow</p>
             </div>
         )
     }
 
-    const isCheckedIn = !!todayRecord?.isCheckedIn;
+    const isCheckedIn = !!todayRecord?.checkIn;
 
   return (
     
@@ -37,20 +47,20 @@ const CheckinButton = ({todayRecord, onAction}) => {
         <button 
             onClick={handleAttendance} 
             disabled={loading} 
-            className={`group relative w-65 p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1 overflow-hidden disabled:opacity-70 disabled:hover:translate-y-0
+            className={`group relative w-65 p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1 overflow-hidden disabled:opacity-70 disabled:hover:translate-y-0
             ${isCheckedIn 
-                ? "bg-white border border-zinc-200 text-black hover:border-zinc-300" // Check-Out: Elegant White
-                : "bg-black border border-black text-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)]" // Check-In: Solid Premium Black
+                ? "bg-white border border-zinc-200 text-black hover:border-red-300/40" // Check-Out: Sleek & Simple White Gray
+                : "bg-black border border-black text-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)]" // Check-In: Still bold black
             }`}
         >
             
             <div className='flex items-center gap-4 relative z-10'>
                 
-                {/* Icon Box with dynamic colors */}
+                {/* Icon Box with simple dynamic colors */}
                 <div className={`p-3 rounded-xl shrink-0 transition-colors duration-300
                     ${isCheckedIn 
-                        ? 'bg-zinc-100 text-zinc-600 group-hover:bg-red-50 group-hover:text-red-500' // Red hover on clock out
-                        : 'bg-white/10 text-white' // Subtle translucent box on black
+                        ? 'bg-zinc-100 text-zinc-600 group-hover:bg-red-50 group-hover:text-red-500' 
+                        : 'bg-white/10 text-white' 
                     }`}
                 >
                     {loading ? (
@@ -62,14 +72,14 @@ const CheckinButton = ({todayRecord, onAction}) => {
                     )}
                 </div>
 
-                {/* Typography details */}
-                <div className='text-left'>
-                    <h2 className='text-[15px] font-bold tracking-tight mb-0.5'>
+                {/* Typography details - Clean & Minimal */}
+                <div className='text-left pr-4'>
+                    <h2 className='text-[12px] font-bold tracking-widest uppercase mb-0.5'>
                         {loading ? "Processing..." : isCheckedIn ? "Clock Out" : "Clock In" }
                     </h2>
-                    <p className={`text-[12px] font-medium 
+                    <p className={`text-[10px] font-bold uppercase tracking-widest 
                         ${isCheckedIn ? "text-zinc-500" : "text-zinc-400"}`}>
-                        {isCheckedIn ? "End your current shift" : "Start your work day"}
+                        {isCheckedIn ? "End shift" : "Start day"}
                     </p>
                 </div>
 

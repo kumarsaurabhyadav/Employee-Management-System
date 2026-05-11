@@ -11,6 +11,6 @@ const payslipSchema = new mongoose.Schema({
 
 },{timestamps: true})
 
-const Payslip = mongoose.models.Attendance || mongoose.model("Payslip", payslipSchema)
+const Payslip = mongoose.models.Payslip || mongoose.model("Payslip", payslipSchema)
 
 export default Payslip;

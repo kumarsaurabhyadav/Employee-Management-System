@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { dummyPayslipData } from '../assets/assets'
 import Loading from '../components/Loading'
 import { format } from 'date-fns'
-import { Download, Loader2Icon, Building2, CheckCircle2, ShieldCheck, Wallet, ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { Download, Loader2Icon, Building2 } from 'lucide-react'
 import { jsPDF } from 'jspdf' 
 import { toPng } from 'html-to-image'
+import api from '../api/axios'
 
 const PrintPayslip = () => {
   const { id } = useParams()
@@ -16,11 +16,23 @@ const PrintPayslip = () => {
   const pdfRef = useRef()
 
   useEffect(() => {
-    const data = dummyPayslipData.find((slip) => String(slip._id) === String(id))
-    setPayslip(data)
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    const fetchPayslip = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/payslips/${id}`);
+        setPayslip(res.data?.data || res.data);
+      } catch (error) {
+        console.error('Failed to fetch payslip:', error);
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+        }, 1000);
+      }
+    };
+
+    if (id) {
+      fetchPayslip();
+    }
   }, [id])
 
   const handleDownloadPDF = async () => {
@@ -51,177 +63,146 @@ const PrintPayslip = () => {
 
   if (!payslip) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] bg-zinc-950">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] bg-zinc-50">
             <p className='text-sm font-bold text-zinc-500 uppercase tracking-widest'>Payslip not found</p>
         </div>
     )
   }
 
+  const grossEarnings = (payslip.basicSalary || 0) + (payslip.allowances || 0);
+  const totalDeductions = payslip.deductions || 0;
+
   return (
-    // 🚀 FULL ZINC BLACK BACKGROUND (The Dark Void)
-    <div className='min-h-screen bg-zinc-950 py-16 flex justify-center animate-fade-in px-4'>
+    <div className='min-h-screen bg-zinc-100 py-12 flex flex-col items-center animate-fade-in px-4'>
       
-      {/* 🚀 PARENT WRAPPER */}
-      <div className="relative group w-full max-w-4xl mt-4">
+     {/* Action Bar */}
+      <div className="w-full max-w-4xl flex justify-end mb-6">
         
-        {/* 🚀 THE MAGIC FLOATING BUTTON (Moved to Top Right & Made Bright to pop on black) */}
-        {/* Hover slide down logic: Defaults to slightly shifted up and invisible, on hover slides down into place */}
-        <div className="absolute -top-7 right-6 sm:right-10 z-50 transition-all duration-500 ease-out opacity-100 sm:opacity-0 sm:-translate-y-4 sm:group-hover:opacity-100 sm:group-hover:translate-y-0">
-          <button 
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              className='px-7 py-3.5 rounded-full text-[12px] font-black uppercase tracking-widest text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200 shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_60px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 disabled:opacity-80 disabled:hover:scale-100 disabled:active:scale-100' 
-          >
-            {isDownloading ? (
-               <>
-                 <Loader2Icon className="w-5 h-5 animate-spin text-zinc-500" />
-                 Processing...
-               </>
-            ) : (
-               <>
-                 <Download className="w-5 h-5 text-emerald-600" />
-                 Download PDF
-               </>
-            )}
-          </button>
-        </div>
-
-        {/* 🚀 THE ULTRA-PREMIUM PDF CARD */}
-        {/* Added a massive, deep black shadow to make it literally pop off the dark background */}
-        <div 
-          ref={pdfRef} 
-          className='w-full bg-white rounded-4xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-zinc-800 overflow-hidden relative transition-all duration-500 group-hover:shadow-[0_0_100px_rgba(0,0,0,0.9)]'
+        {/* 🚀 THE FIX: Standard "White to Black Hover" Button */}
+        <button 
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className='group px-6 py-3.5 rounded-xl text-[13px] font-bold uppercase tracking-widest flex items-center gap-2.5 transition-all duration-300 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-70 disabled:pointer-events-none bg-white text-zinc-700 border border-zinc-200 hover:bg-black hover:text-white hover:border-black'
         >
-          
-          {/* Subtle Background Pattern & Watermark */}
-          <div className="absolute inset-0 opacity-[0.015] pointer-events-none z-0" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-          <div className="absolute -top-24 -right-24 opacity-[0.02] rotate-12 pointer-events-none z-0">
-              <Building2 className="w-100 h-100" />
-          </div>
+          {isDownloading ? (
+             <>
+               <Loader2Icon className="w-4 h-4 animate-spin text-zinc-400 group-hover:text-zinc-300" />
+               Generating PDF...
+             </>
+          ) : (
+             <>
+               <Download className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
+               Download PDF
+             </>
+          )}
+        </button>
+      </div>
 
-          {/* ======== HEADER ======== */}
-          <div className='relative z-10 px-10 pt-12 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-zinc-100'>
-            
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 bg-zinc-950 rounded-2xl flex items-center justify-center shadow-lg shadow-zinc-900/20">
-                  <Building2 className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                  <h1 className='text-3xl font-black text-zinc-900 tracking-tight uppercase'>Acme Corp.</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                      <p className='text-[11px] font-bold text-zinc-500 uppercase tracking-widest'>Verified Payroll</p>
-                  </div>
-              </div>
+      {/* ======== ACTUAL PAYSLIP DOCUMENT ======== */}
+      <div 
+        ref={pdfRef} 
+        className='w-full max-w-4xl bg-white shadow-xl border border-zinc-300 p-10 sm:p-14 relative'
+        style={{ minHeight: '297mm' }} 
+      >
+        
+        <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-800 pb-8 mb-8">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                    <h1 className='text-2xl font-black text-zinc-900 uppercase tracking-tight'>Acme Corporation</h1>
+                    <p className='text-xs text-zinc-600 mt-0.5'>123 Business Avenue, Tech District, City - 10001</p>
+                </div>
             </div>
-            
-            <div className='text-left sm:text-right'>
-              <h2 className='text-5xl font-black text-zinc-100 tracking-tighter uppercase mb-2 select-none'>Payslip</h2>
-              <div className="inline-flex items-center gap-2 bg-zinc-50 border border-zinc-200/80 px-4 py-1.5 rounded-xl">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <p className='text-xs font-bold text-zinc-800 uppercase tracking-widest'>
-                      {format(new Date(payslip.year, payslip.month - 1), "MMMM yyyy")}
-                  </p>
-              </div>
+            <div className="text-right mt-4 sm:mt-0">
+                <h2 className='text-3xl font-black text-zinc-300 uppercase tracking-widest'>Payslip</h2>
+                <p className='text-sm font-bold text-zinc-800 mt-1 uppercase tracking-wider'>
+                    {format(new Date(payslip.year, payslip.month - 1), "MMMM yyyy")}
+                </p>
             </div>
-          </div>
-
-          {/* ======== EMPLOYEE DETAILS ======== */}
-          <div className="relative z-10 px-10 py-10">
-              <div className='flex flex-wrap gap-y-8 rounded-2xl'>
-                  <div className="w-1/2 sm:w-1/4 border-l-2 border-zinc-200/60 pl-4">
-                      <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5'>Employee Name</p>
-                      <p className='text-base font-bold text-zinc-900 capitalize'>{payslip.employee?.firstName} {payslip.employee?.lastName}</p>
-                  </div>
-                  <div className="w-1/2 sm:w-1/4 border-l-2 border-zinc-200/60 pl-4">
-                      <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5'>Designation</p>
-                      <p className='text-base font-bold text-zinc-900 capitalize'>{payslip.employee?.position}</p>
-                  </div>
-                  <div className="w-1/2 sm:w-1/4 border-l-2 border-zinc-200/60 pl-4">
-                      <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5'>Contact Email</p>
-                      <p className='text-base font-bold text-zinc-900'>{payslip.employee?.email}</p>
-                  </div>
-                  <div className="w-1/2 sm:w-1/4 border-l-2 border-zinc-200/60 pl-4">
-                      <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5'>Payment Status</p>
-                      <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          <p className='text-sm font-bold text-emerald-600 uppercase tracking-widest'>Paid</p>
-                      </div>
-                  </div>
-              </div>
-          </div>
-
-          {/* ======== SALARY BREAKDOWN ======== */}
-          <div className="relative z-10 px-10 mb-12">
-              <div className="bg-zinc-50/50 rounded-3xl p-8 border border-zinc-100">
-                  <p className='text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-6'>Earnings & Deductions</p>
-                  
-                  <div className="space-y-6">
-                      {/* Basic Salary */}
-                      <div className="flex items-end justify-between group/row">
-                          <div className="flex items-center gap-4 bg-white px-4 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <div className="p-2 bg-zinc-100 rounded-xl text-zinc-600"><Wallet className="w-5 h-5" /></div>
-                              <div>
-                                  <p className="text-sm font-bold text-zinc-900">Basic Salary</p>
-                                  <p className="text-[11px] font-medium text-zinc-500">Fixed monthly pay</p>
-                              </div>
-                          </div>
-                          <div className="flex-1 border-b-2 border-dashed border-zinc-200 mx-4 mb-5 opacity-50 transition-opacity group-hover/row:opacity-100"></div>
-                          <div className="bg-white px-5 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <p className="text-lg font-black text-zinc-900">${payslip.basicSalary?.toLocaleString()}</p>
-                          </div>
-                      </div>
-
-                      {/* Allowances */}
-                      <div className="flex items-end justify-between group/row">
-                          <div className="flex items-center gap-4 bg-white px-4 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600"><ArrowUpRight className="w-5 h-5" /></div>
-                              <div>
-                                  <p className="text-sm font-bold text-zinc-900">Allowances</p>
-                                  <p className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-0.5 inline-block uppercase tracking-wider">Addition</p>
-                              </div>
-                          </div>
-                          <div className="flex-1 border-b-2 border-dashed border-zinc-200 mx-4 mb-5 opacity-50 transition-opacity group-hover/row:opacity-100"></div>
-                          <div className="bg-white px-5 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <p className="text-lg font-black text-emerald-600">+$ {payslip.allowances?.toLocaleString()}</p>
-                          </div>
-                      </div>
-
-                      {/* Deductions */}
-                      <div className="flex items-end justify-between group/row">
-                          <div className="flex items-center gap-4 bg-white px-4 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <div className="p-2 bg-rose-50 rounded-xl text-rose-600"><ArrowDownRight className="w-5 h-5" /></div>
-                              <div>
-                                  <p className="text-sm font-bold text-zinc-900">Deductions</p>
-                                  <p className="text-[11px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded mt-0.5 inline-block uppercase tracking-wider">Tax & Others</p>
-                              </div>
-                          </div>
-                          <div className="flex-1 border-b-2 border-dashed border-zinc-200 mx-4 mb-5 opacity-50 transition-opacity group-hover/row:opacity-100"></div>
-                          <div className="bg-white px-5 py-3 rounded-2xl border border-zinc-100 shadow-sm relative z-10">
-                              <p className="text-lg font-black text-rose-600">-$ {payslip.deductions?.toLocaleString()}</p>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-
-          {/* ======== NET SALARY HIGHLIGHT ======== */}
-          <div className="relative z-10 bg-zinc-950 text-white p-10 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-6 border-t-8 ">
-              <div>
-                  <p className='text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2'>Total Net Payable</p>
-                  <div className="flex items-center gap-3">
-                      <p className='text-sm font-medium text-zinc-300'>Amount credited to employee account</p>
-                  </div>
-              </div>
-              <div className='text-right'>
-                  <p className='text-5xl sm:text-6xl font-black tracking-tighter'>
-                      <span className="text-zinc-600 font-medium text-4xl mr-1">$</span>
-                      {payslip.netSalary?.toLocaleString()}
-                  </p>
-              </div>
-          </div>
-
         </div>
+
+        <div className="mb-8 border border-zinc-300 rounded-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 bg-zinc-50 text-xs font-bold text-zinc-600 uppercase tracking-wider">
+                <div className="p-3 border-r border-b border-zinc-300">Employee Name</div>
+                <div className="p-3 border-r border-b border-zinc-300">Designation</div>
+                <div className="p-3 border-r border-b border-zinc-300">Email ID</div>
+                <div className="p-3 border-b border-zinc-300">Status</div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 text-sm font-semibold text-zinc-900">
+                <div className="p-3 border-r border-zinc-300 capitalize">{payslip.employee?.firstName} {payslip.employee?.lastName}</div>
+                <div className="p-3 border-r border-zinc-300 capitalize">{payslip.employee?.position || 'N/A'}</div>
+                <div className="p-3 border-r border-zinc-300">{payslip.employee?.email}</div>
+                <div className="p-3 text-emerald-600 uppercase font-bold">Paid</div>
+            </div>
+        </div>
+
+        <div className="border border-zinc-300 rounded-sm flex flex-col md:flex-row mb-8">
+            <div className="w-full md:w-1/2 border-r border-zinc-300 flex flex-col">
+                <div className="bg-zinc-100 p-3 text-xs font-bold text-zinc-700 uppercase tracking-wider border-b border-zinc-300 flex justify-between">
+                    <span>Earnings</span>
+                    <span>Amount ($)</span>
+                </div>
+                <div className="flex-1 p-0">
+                    <div className="flex justify-between p-3 border-b border-zinc-200 text-sm">
+                        <span className="text-zinc-600 font-medium">Basic Salary</span>
+                        <span className="font-semibold text-zinc-900">{payslip.basicSalary?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between p-3 border-b border-zinc-200 text-sm">
+                        <span className="text-zinc-600 font-medium">Allowances</span>
+                        <span className="font-semibold text-zinc-900">{payslip.allowances?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                </div>
+                <div className="bg-zinc-50 p-3 flex justify-between border-t border-zinc-300 font-bold text-sm">
+                    <span className="text-zinc-800 uppercase">Gross Earnings</span>
+                    <span className="text-zinc-900">{grossEarnings.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                </div>
+            </div>
+
+            <div className="w-full md:w-1/2 flex flex-col">
+                <div className="bg-zinc-100 p-3 text-xs font-bold text-zinc-700 uppercase tracking-wider border-b border-zinc-300 flex justify-between">
+                    <span>Deductions</span>
+                    <span>Amount ($)</span>
+                </div>
+                <div className="flex-1 p-0">
+                    <div className="flex justify-between p-3 border-b border-zinc-200 text-sm">
+                        <span className="text-zinc-600 font-medium">Taxes & Deductions</span>
+                        <span className="font-semibold text-zinc-900">{payslip.deductions?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                </div>
+                <div className="bg-zinc-50 p-3 flex justify-between border-t border-zinc-300 font-bold text-sm">
+                    <span className="text-zinc-800 uppercase">Total Deductions</span>
+                    <span className="text-zinc-900">{totalDeductions.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        </div>
+
+        <div className="bg-zinc-100 border border-zinc-300 rounded-sm p-6 flex justify-between items-center mb-16">
+            <div>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Net Payable Amount</p>
+                <p className="text-sm font-medium text-zinc-700 mt-1">Amount transferred to employee's bank account.</p>
+            </div>
+            <div className="text-right">
+                <p className="text-3xl font-black text-zinc-900">
+                    ${payslip.netSalary?.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                </p>
+            </div>
+        </div>
+
+        <div className="border-t border-zinc-300 pt-8 flex justify-between items-end mt-auto">
+            <div>
+                <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
+                    This is a computer generated document.
+                    <br />No signature is required.
+                </p>
+            </div>
+            <div className="text-center">
+                <div className="w-40 border-b border-zinc-400 mb-2"></div>
+                <p className="text-xs font-bold text-zinc-600 uppercase">Authorized Signatory</p>
+            </div>
+        </div>
+
       </div>
     </div>
   )

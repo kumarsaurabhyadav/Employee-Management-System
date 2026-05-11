@@ -1,31 +1,55 @@
 import { useCallback, useEffect, useState } from "react"
-import { dummyPayslipData } from "../assets/assets";
 import Loading from "../components/Loading";
 import PayslipList from "../components/payslip/PayslipList";
 import GeneratePayslipForm from "../components/payslip/GeneratePayslipForm";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
+import api from "../api/axios";
 
 const PaySlips = () => {
   const [payslips, setPayslips] = useState([])
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true);
-  const isAdmin = true;
+  const {user} = useAuth()
+  const isAdmin = user?.role === "ADMIN";
 
   const fetchPayslips = useCallback(async () => {
-    setPayslips(dummyPayslipData)
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, [])
+    setLoading(true);
 
-  
+    try {
+      const res = await api.get('/payslips');
+      setPayslips(Array.isArray(res.data.data) ? res.data.data : []);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message);
+      setPayslips([]);
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    }
+  }, [])
 
   useEffect(()=>{
     fetchPayslips()
   },[fetchPayslips])
 
-  useEffect(()=>{
-    if(isAdmin) setEmployees(dummyPayslipData)
-  },[isAdmin])
+  useEffect(() => {
+    if (isAdmin) {
+      api
+        .get("/employees")
+        .then((res) =>
+          setEmployees(
+            Array.isArray(res.data)
+              ? res.data.filter((e) => !e.isDeleted)
+              : []
+          )
+        )
+        .catch((err) => {
+          console.log(err);
+          setEmployees([]);
+        });
+    }
+  }, [isAdmin])
 
   if(loading) return <Loading />
 

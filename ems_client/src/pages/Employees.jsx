@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { DEPARTMENTS, dummyEmployeeData } from '../assets/assets'
-import { Plus, Search, LayoutGridIcon, X } from 'lucide-react'
+import { DEPARTMENTS } from '../assets/assets'
+import { Plus, Search, LayoutGridIcon, X, SlidersHorizontal, Users } from 'lucide-react'
 import EmployeeCard from '../components/EmployeeCard'
 import EmployeeForm from '../components/EmployeeForm'
+import api from '../api/axios' 
 
 const Employees = () => {
   const [employees, setEmployees] = useState([])
@@ -13,136 +14,190 @@ const Employees = () => {
   const [showCreateModel, setShowCreateModel] = useState(false)
 
   const fetchEmployees = useCallback(async ()=> {
-    setLoading(true)
-    setEmployees(dummyEmployeeData.filter((emp)=>(selectDept ? emp.department === selectDept : emp)))
-    setTimeout(()=>{
+    try {
+      const url = selectDept ? `/employees?department=${selectDept}` : "/employees";
+      const res = await api.get(url)
+      setEmployees(res.data)
+    } catch (error) {
+      console.error("Failed to fetch employees", error);
+    } finally {
       setLoading(false)
-    },1000)
-  },[selectDept])
+    }
+  }, [selectDept])
 
-  useEffect(()=>{
-    fetchEmployees()
-  },[fetchEmployees])
+  useEffect(() => {
+    setLoading(true)
+    const timer = setTimeout(() => {
+      fetchEmployees()
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [fetchEmployees])
 
   const filtered = employees.filter((emp)=>`${emp.firstName} ${emp.lastName} ${emp.position}`.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className='animate-fade-in'>
-      {/* -------header-------- */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8'>
-        <div>
-          <h1 className='page-title'>Employees</h1>
-          <p className='page-subtitle'>Manage your team members</p>
-        </div>
+    // 🚀 PREMIUM UPGRADE 1: Subtle Dot Grid Background
+    <div className='min-h-screen relative animate-fade-in'>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
         
-        <button onClick={()=>setShowCreateModel(true)} className='btn-primary flex items-center gap-2 w-full sm:w-auto justify-center'>
-          <Plus size={16}/> Add Employee
-        </button>
-      </div>
+        <div className="relative z-10 pb-20">
+            {/* ------- HEADER -------- */}
+            <div className='flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-10'>
+                <div>
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2.5 bg-zinc-900 rounded-xl shadow-lg">
+                        <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <h1 className='text-3xl sm:text-4xl font-black text-zinc-900 tracking-tighter'>Employees</h1>
+                </div>
+                <p className='text-sm font-medium text-zinc-500 ml-1'>Manage your employees and organizational structure.</p>
+                </div>
+                
+                <button 
+                    onClick={()=>setShowCreateModel(true)} 
+                    className='px-6 py-3.5 rounded-2xl text-[13px] font-bold uppercase tracking-widest text-white bg-zinc-900 hover:bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2.5 w-full sm:w-auto justify-center active:scale-95'
+                >
+                <Plus size={18} strokeWidth={3} /> Add Employee
+                </button>
+            </div>
 
-      {/* ---------search bar--------- */}
-      <div className='flex flex-col sm:flex-row gap-3 mb-6'>
-        <div className='relative flex-1'>
-          <Search className='absolute left-3.5 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4'/>
-          <input placeholder='Search employees.....' className='w-full pl-10' onChange={(e)=>setSearch(e.target.value)} value={search} />
-        </div>
-        
-        <select value={selectDept} onChange={(e)=>setSelectDept(e.target.value)} className='w-full sm:max-w-40'>
-          <option value="">All Departments</option>
-          {DEPARTMENTS.map((deptName)=>(
-            <option key={deptName} value={deptName}>{deptName}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* --------employee card & Loader -------- */}
-      {loading ? (
-        <div className='flex flex-col items-center justify-center py-24'>
-            <div className='relative flex items-center justify-center'>
-                <div className='w-12 h-12 border-[3px] border-zinc-100 border-t-black border-r-black/30 rounded-full animate-spin'></div>
-                <div className='absolute inset-0 flex items-center justify-center'>
-                    <LayoutGridIcon className='w-4 h-4 text-zinc-300 animate-pulse' />
+            {/* 🚀 PREMIUM UPGRADE 2: Unified Glass Control Bar */}
+            <div className='bg-white/80 backdrop-blur-md border border-zinc-200/80 p-2 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-2 mb-10 transition-shadow focus-within:shadow-md focus-within:border-zinc-300'>
+                
+                {/* Search Input */}
+                <div className='relative flex-1 w-full flex items-center'>
+                    <Search className='absolute left-4 text-zinc-400 w-4 h-4'/>
+                    <input 
+                        placeholder='Search by name, position or email...' 
+                        className='w-full pl-11 pr-4 py-3 bg-transparent border-none focus:ring-0 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 placeholder:font-normal' 
+                        onChange={(e)=>setSearch(e.target.value)} 
+                        value={search} 
+                    />
+                </div>
+                
+                {/* Vertical Divider (Hidden on mobile) */}
+                <div className="hidden sm:block w-px h-6 bg-zinc-200"></div>
+                
+                {/* Filter Dropdown */}
+                <div className="relative w-full sm:w-auto flex items-center bg-zinc-50/50 sm:bg-transparent rounded-xl sm:rounded-none px-2 sm:px-0 mt-2 sm:mt-0">
+                    <SlidersHorizontal className="absolute left-4 sm:left-2 text-zinc-400 w-4 h-4" />
+                    <select 
+                        value={selectDept} 
+                        onChange={(e)=>setSelectDept(e.target.value)} 
+                        className='w-full sm:w-48 pl-11 sm:pl-9 pr-8 py-3 bg-transparent border-none focus:ring-0 text-sm font-bold text-zinc-700 appearance-none cursor-pointer'
+                    >
+                        <option value="">All Departments</option>
+                        {DEPARTMENTS.map((deptName)=>(
+                            <option key={deptName} value={deptName}>{deptName}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
-            <div className='mt-5 flex flex-col items-center'>
-                <p className='text-[13px] font-semibold tracking-widest text-zinc-900 uppercase'>
-                    Workspace
-                </p>
-                <p className='text-xs font-medium text-zinc-500 mt-1 animate-pulse'>
-                    Loading employees...
-                </p>
-            </div>
-        </div>
-      ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-5 gap-4'>
-          {filtered.length === 0 ? (
-            <p className='col-span-full text-center py-16 text-zinc-500 bg-zinc-50/50 rounded-2xl border border-dashed border-zinc-300'>No employees found</p>
-          ) : (
-            filtered.map((emp)=> (<EmployeeCard key={emp.id} employee={emp} onDelete={fetchEmployees} onEdit={(e)=>setEditEmployee(e)}/>))
-          )}
-        </div>
-      )}
 
-      {/*        CREATE EMPLOYEE MODAL    */}
-      
-      {showCreateModel && (
-        <div className='fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 sm:pt-20 overflow-y-auto bg-zinc-950/40 backdrop-blur-sm transition-opacity' onClick={()=>setShowCreateModel(false)}>
-          
-          <div className='relative bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-zinc-200 w-full max-w-3xl mb-8 animate-slide-up' onClick={(e)=>e.stopPropagation()}>
-            
-            {/* Modal Header */}
-            <div className='flex items-center justify-between p-6 border-b border-zinc-100'>
-              <div>
-                <h2 className='text-xl font-semibold text-black tracking-tight'>Add New Employee</h2>
-                <p className='text-[13px] text-zinc-500 mt-1 font-medium'>Create a user account and employee profile</p>
-              </div>
-              <button onClick={()=>setShowCreateModel(false)} className='p-2 rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-700'>
-                <X className='w-5 h-5'/>
-              </button>
-            </div>
-            
-            {/* Modal Body / Form Area */}
-            <div className='p-6'>
-              
-              <EmployeeForm onSuccess={()=>{
-                  setShowCreateModel(false);
-                  fetchEmployees();
-                }} onCancel={()=>setShowCreateModel(false)}/>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* -------- EMPLOYEE LIST & LOADER -------- */}
+            {loading ? (
+                <div className='flex flex-col items-center justify-center py-32'>
+                    <div className='relative flex items-center justify-center'>
+                        <div className='w-14 h-14 border-[3px] border-zinc-100 border-t-zinc-900 border-r-zinc-900/30 rounded-full animate-spin'></div>
+                        <div className='absolute inset-0 flex items-center justify-center'>
+                            <Users className='w-5 h-5 text-zinc-300 animate-pulse' />
+                        </div>
+                    </div>
+                    <div className='mt-6 flex flex-col items-center'>
+                        <p className='text-[11px] font-bold tracking-widest text-zinc-900 uppercase'>Syncing Data</p>
+                        <p className='text-sm font-medium text-zinc-500 mt-1 animate-pulse'>Fetching employee records...</p>
+                    </div>
+                </div>
+            ) : (
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6 gap-5'>
+                {filtered.length === 0 ? (
+                    // 🚀 PREMIUM UPGRADE 3: Stunning Empty State
+                    <div className='col-span-full flex flex-col items-center justify-center py-24 bg-white/50 rounded-4xl border-2 border-dashed border-zinc-200'>
+                        <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-4 border border-zinc-100 shadow-sm">
+                            <Search className='w-8 h-8 text-zinc-300' />
+                        </div>
+                        <p className='text-base font-bold text-zinc-900'>No employees found</p>
+                        <p className='text-sm font-medium text-zinc-500 mt-1 text-center max-w-sm'>We couldn't find any team members matching your current search criteria.</p>
+                        {search && (
+                            <button onClick={() => setSearch('')} className="mt-4 text-[12px] font-bold text-zinc-900 bg-zinc-100 px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors uppercase tracking-widest">
+                                Clear Search
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    filtered.map((emp)=> (
+                        <EmployeeCard 
+                            key={emp._id || emp.id} 
+                            employee={emp} 
+                            onDelete={fetchEmployees} 
+                            onEdit={(emp)=>setEditEmployee(emp)} 
+                        />
+                    ))
+                )}
+                </div>
+            )}
 
-      {/*         EDIT EMPLOYEE MODAL      */}
-      
-      {editEmployee && (
-        <div className='fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 sm:pt-20 overflow-y-auto bg-zinc-950/40 backdrop-blur-sm transition-opacity' onClick={()=>setEditEmployee(null)}>
-          
-          <div className='relative bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-zinc-200 w-full max-w-3xl mb-8 animate-slide-up' onClick={(e)=>e.stopPropagation()}>
-            
-            {/* Modal Header */}
-            <div className='flex items-center justify-between p-6 border-b border-zinc-100'>
-              <div>
-                <h2 className='text-xl font-semibold text-black tracking-tight'>Edit Employee</h2>
-                <p className='text-[13px] text-zinc-500 mt-1 font-medium'>Update employee details and permissions</p>
-              </div>
-              <button onClick={()=>setEditEmployee(null)} className='p-2 rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-700'>
-                <X className='w-5 h-5'/>
-              </button>
-            </div>
-            
-            {/* Modal Body / Form Area */}
-            <div className='p-6'>
-                {/* aapka form yahan aayega */}
-                <EmployeeForm initialData={editEmployee} onSuccess={()=>{
-                  setEditEmployee(null);
-                  fetchEmployees();
-                }} onCancel={()=>setEditEmployee(null)}/>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* ======== CREATE EMPLOYEE MODAL ======== */}
+            {showCreateModel && (
+                <div className='fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 sm:pt-20 overflow-y-auto bg-zinc-950/60 backdrop-blur-sm transition-opacity animate-fade-in' onClick={()=>setShowCreateModel(false)}>
+                
+                <div className='relative bg-white rounded-4xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] border border-zinc-100 w-full max-w-3xl mb-8 animate-slide-up' onClick={(e)=>e.stopPropagation()}>
+                    
+                    <div className='flex items-center justify-between p-6 sm:p-8 border-b border-zinc-100'>
+                    <div>
+                        <h2 className='text-2xl font-black text-zinc-900 tracking-tight'>Add New Employee</h2>
+                        <p className='text-[13px] text-zinc-500 mt-1 font-medium'>Create a user account and employee profile</p>
+                    </div>
+                    <button onClick={()=>setShowCreateModel(false)} className='p-2 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-900 border border-zinc-200'>
+                        <X className='w-5 h-5'/>
+                    </button>
+                    </div>
+                    
+                    <div className='p-6 sm:p-8 bg-zinc-50/30 rounded-b-4xl'>
+                    <EmployeeForm 
+                        onSuccess={()=>{
+                        setShowCreateModel(false);
+                        fetchEmployees(); 
+                        }} 
+                        onCancel={()=>setShowCreateModel(false)}
+                    />
+                    </div>
+                </div>
+                </div>
+            )}
 
+            {/* ======== EDIT EMPLOYEE MODAL ======== */}
+            {editEmployee && (
+                <div className='fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 sm:pt-20 overflow-y-auto bg-zinc-950/60 backdrop-blur-sm transition-opacity animate-fade-in' onClick={()=>setEditEmployee(null)}>
+                
+                <div className='relative bg-white rounded-4xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] border border-zinc-100 w-full max-w-3xl mb-8 animate-slide-up' onClick={(e)=>e.stopPropagation()}>
+                    
+                    <div className='flex items-center justify-between p-6 sm:p-8 border-b border-zinc-100'>
+                    <div>
+                        <h2 className='text-2xl font-black text-zinc-900 tracking-tight'>Edit Employee</h2>
+                        <p className='text-[13px] text-zinc-500 mt-1 font-medium'>Update employee details and permissions</p>
+                    </div>
+                    <button onClick={()=>setEditEmployee(null)} className='p-2 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-900 border border-zinc-200'>
+                        <X className='w-5 h-5'/>
+                    </button>
+                    </div>
+                    
+                    <div className='p-6 sm:p-8 bg-zinc-50/30 rounded-b-4xl'>
+                        <EmployeeForm 
+                            initialData={editEmployee} 
+                            onSuccess={()=>{
+                            setEditEmployee(null);
+                            fetchEmployees(); 
+                            }} 
+                            onCancel={()=>setEditEmployee(null)}
+                        />
+                    </div>
+                </div>
+                </div>
+            )}
+        </div>
     </div>
   )
 }
