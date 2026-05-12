@@ -1,14 +1,35 @@
 import { ArrowRightIcon, Copyright, ShieldIcon, UserIcon } from 'lucide-react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import LoginLeftSide from '../components/LoginLeftSide';
 import Loading from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
 
 const LoginLanding = () => {
     const {user, loading} = useAuth()
+    const navigate = useNavigate()
     
-        if(loading) return <Loading />
-        if(user) return <Navigate to="/"/>
+    if (loading) return <Loading />
+
+    if (user) {
+        return (
+            <div className='min-h-screen flex flex-col md:flex-row bg-white'>
+                <LoginLeftSide />
+                <div className='w-full md:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-16 relative overflow-y-auto min-h-screen bg-white'>
+                    <div className='w-full max-w-md animate-fade-in text-center'>
+                        <h1 className='text-3xl font-bold text-slate-900 mb-4'>Already signed in</h1>
+                        <p className='text-slate-500 mb-8'>You are already logged in. Go to your dashboard to continue working.</p>
+                        <button
+                            type='button'
+                            onClick={() => navigate('/dashboard')}
+                            className='w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold uppercase tracking-widest hover:bg-black transition-all duration-200'
+                        >
+                            Go to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     const portalOptions = [
         {
