@@ -7,9 +7,13 @@ const leaveApplicationSchema = new mongoose.Schema({
     endDate: {type: Date, required: true },
     reason: {type: String, required: true },
     status: {type: String, enum: ["PENDING", "APPROVED", "REJECTED"], default: "PENDING" },
+    paidDays: { type: Number, default: 0 },
+    unpaidDays: { type: Number, default: 0 },
 
 }, {timestamps: true})
 
-const LeaveApplication = mongoose.model.LeaveApplication || mongoose.model("LeaveApplication", leaveApplicationSchema)
+const LeaveApplication =
+  mongoose.models.LeaveApplication ||
+  mongoose.model("LeaveApplication", leaveApplicationSchema)
 
 export default LeaveApplication;

@@ -1,6 +1,7 @@
 import { Loader2, Save, User } from 'lucide-react'
 import React, { useState } from 'react'
 import api from '../api/axios'
+import { withMinLoader } from '../utils/loaderDelay'
 
 const ProfileForm = ({ initialData, onSuccess }) => {
     const [loading, setLoading] = useState(false)
@@ -16,7 +17,7 @@ const ProfileForm = ({ initialData, onSuccess }) => {
     const formData = new FormData(e.currentTarget)
 
     try {
-        await api.post("/profile", formData)
+        await withMinLoader(() => api.post("/profile", formData))
 
         setMessage("Profile updated successfully")
 

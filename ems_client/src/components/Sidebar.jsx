@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { dummyProfileData } from '../assets/assets'
-import { CalendarIcon, ChevronRightIcon, DollarSignIcon, FileTextIcon, LayoutGridIcon, Loader2, LogOutIcon, MenuIcon, SettingsIcon, UserIcon, XIcon } from 'lucide-react'
+import { CalendarIcon, ChevronRightIcon, ClockIcon, DollarSignIcon, FileTextIcon, LayoutGridIcon, Loader2, LogOutIcon, MenuIcon, SettingsIcon, UserIcon, XIcon, CheckSquareIcon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -10,6 +10,7 @@ const Sidebar = () => {
     const navigate = useNavigate()
     const [userName, setUserName] = useState('')
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [hasCompletedAttendance, setHasCompletedAttendance] = useState(false)
 
     const { user, loading, logout} = useAuth()
 
@@ -19,6 +20,24 @@ const Sidebar = () => {
         })
     }, [])
 
+    // Check if user has completed attendance records (for overtime visibility)
+    useEffect(() => {
+        if (user && user.role === "EMPLOYEE") {
+            api.get("/attendance/history?limit=10")
+                .then(({ data }) => {
+                    const hasCompleted = data?.some(record => record.checkOut);
+                    setHasCompletedAttendance(hasCompleted);
+                })
+                .catch(() => {
+                    // If we can't check, assume they have records to avoid hiding unnecessarily
+                    setHasCompletedAttendance(true);
+                });
+        } else {
+            // Admins and managers always see overtime
+            setHasCompletedAttendance(true);
+        }
+    }, [user]);
+
     //Close mobile sidebar on route change
     useEffect(() => {
         setMobileOpen(false)
@@ -27,11 +46,13 @@ const Sidebar = () => {
     const role = user?.role;
     const navItems = [
         {name: "Dashboard", href: "/dashboard", icon: LayoutGridIcon},
-        role === "ADMIN" ?
+        role === "ADMIN" || role === "MANAGER" ?
         {name: "Employees", href: "/employees", icon: UserIcon} : 
         {name: "Attendence", href: "/attendence", icon: CalendarIcon},
         {name: "Leave", href: "/leave", icon: FileTextIcon},
+        ...(hasCompletedAttendance ? [{name: "Overtime", href: "/overtime", icon: ClockIcon}] : []),
         {name: "Payslips", href: "/payslips", icon: DollarSignIcon},
+        ...(role === "ADMIN" || role === "MANAGER" ? [{name: "Approvals", href: "/approvals", icon: CheckSquareIcon}] : []),
         {name: "Settings", href: "/settings", icon: SettingsIcon}
     ]
 
@@ -76,7 +97,9 @@ const Sidebar = () => {
                         </div>
                         <div className='min-w-0'>
                             <p className='text-[13px] font-medium text-zinc-200 truncate'>{userName}</p>
-                            <p className='text-[13px] text-zinc-500 truncate '>{role ==="ADMIN" ? "Administrator" : "Employee"}</p>
+                            <p className='text-[13px] text-zinc-500 truncate '>
+                              {role === "ADMIN" ? "Administrator" : role === "MANAGER" ? "Manager" : "Employee"}
+                            </p>
                         </div>
                     </div>
                 </div>

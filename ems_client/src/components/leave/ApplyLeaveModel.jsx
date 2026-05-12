@@ -2,6 +2,7 @@ import { CalendarDays, FileText, Loader2, Send, X } from 'lucide-react';
 import React, { useState } from 'react'
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { withMinLoader } from '../../utils/loaderDelay';
 
 const ApplyLeaveModel = ({ open, onClose, onSuccess }) => {
 
@@ -19,11 +20,13 @@ const ApplyLeaveModel = ({ open, onClose, onSuccess }) => {
         const data = Object.fromEntries(formData.entries())
 
         try {
-            await api.post('/leave', data)
+            await withMinLoader(() => api.post('/leave', data))
             onSuccess()
             onClose()
         } catch (err) {
             toast.error(err.response?.data?.error || err?.message)
+        } finally {
+            setLoading(false)
         }
     }
 

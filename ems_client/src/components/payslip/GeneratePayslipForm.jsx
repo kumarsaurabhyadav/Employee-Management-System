@@ -2,6 +2,7 @@ import { Calculator, CalendarDays, DollarSign, Plus, User, X, Loader2 } from 'lu
 import React, { useState } from 'react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import { withMinLoader } from '../../utils/loaderDelay'
 
 const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -9,13 +10,15 @@ const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
 
     // Trigger Button
     if (!isOpen) return (
-        <button
-            onClick={() => setIsOpen(true)}
-            className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm w-full sm:w-auto justify-center'
-        >
-            <Plus className='w-4 h-4' />
-            Generate Payslip
-        </button>
+        <div className='fixed top-4 right-16 sm:right-20 lg:right-24 z-50 flex items-center'>
+            <button
+                onClick={() => setIsOpen(true)}
+                className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm w-full sm:w-auto justify-center'
+            >
+                <Plus className='w-4 h-4' />
+                Generate Payslip
+            </button>
+        </div>
     )
 
 const handleSubmit = async (e) => {
@@ -26,10 +29,7 @@ const handleSubmit = async (e) => {
     const data = Object.fromEntries(formData.entries());
 
     try {
-        // 1 sec loader before API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        await api.post('/payslips', data);
+        await withMinLoader(() => api.post('/payslips', data));
 
         toast.success('Payslip generated successfully');
 

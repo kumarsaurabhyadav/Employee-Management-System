@@ -1,12 +1,16 @@
 import { Router } from "express";
-import { protect, protectAdmin } from "../middleware/auth.js";
+import { protect, protectAdmin, protectAdminOrManager } from "../middleware/auth.js";
 import { createLeave, getLeaves, updateLeaveStatus } from "../controllers/leaveController.js";
+import { getLeaveBalanceByEmployee, getMyLeaveBalance, updateLeaveBalance } from "../controllers/leaveBalanceController.js";
 
 
 const leaveRouter = Router();
 
 leaveRouter.post("/", protect, createLeave)
 leaveRouter.get("/", protect, getLeaves)
-leaveRouter.patch("/:id", protect,protectAdmin,updateLeaveStatus)
+leaveRouter.get("/balance", protect, getMyLeaveBalance)
+leaveRouter.get("/balances", protect, protectAdmin, getLeaveBalanceByEmployee)
+leaveRouter.patch("/balances/:employeeId", protect, protectAdmin, updateLeaveBalance)
+leaveRouter.patch("/:id", protect,protectAdminOrManager,updateLeaveStatus)
 
 export default leaveRouter

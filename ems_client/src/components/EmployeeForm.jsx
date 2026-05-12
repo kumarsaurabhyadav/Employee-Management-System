@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { DEPARTMENTS } from '../assets/assets'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
+import { withMinLoader } from '../utils/loaderDelay'
 import { Loader2, User, Briefcase, ShieldCheck } from 'lucide-react' 
 
 const EmployeeForm = ({ initialData, onSuccess, onCancel }) => {
@@ -24,9 +25,7 @@ const EmployeeForm = ({ initialData, onSuccess, onCancel }) => {
             const url = isEditMode ? `/employees/${initialData.id}` : "/employees";
             const method = isEditMode ? "put" : "post";
 
-            await api[method](url, formData)
-
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await withMinLoader(() => api[method](url, formData))
 
             toast.success(isEditMode ? "Employee updated successfully!" : "Employee created successfully!");
 

@@ -7,6 +7,8 @@ const payslipSchema = new mongoose.Schema({
     basicSalary: { type: Number, required: true },
     allowances: { type: Number, default: 0 },
     deductions: { type: Number, default: 0 },
+    overtimeHours: { type: Number, default: 0 },
+    overtimePay: { type: Number, default: 0 },
     netSalary: { type: Number, required: true },
 
 },{timestamps: true})

@@ -2,7 +2,8 @@ import { Building2Icon, CalendarIcon, FileTextIcon, UserIcon, ArrowRightIcon, Pl
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-const AdminDashboard = ({data}) => {
+const AdminDashboard = ({ data }) => {
+    const roleLabel = data?.role === "MANAGER" ? "Manager" : "Admin";
     const stats = [
         {
             icon: UserIcon,
@@ -36,7 +37,7 @@ const AdminDashboard = ({data}) => {
             <div className='page-header'>
                 <h1 className='page-title'>Dashboard</h1>
                 <p className='page-subtitle'>
-                    Welcome back, Admin - here's your overview
+                    Welcome back, {roleLabel} — here&apos;s your overview
                 </p>
             </div>
 
@@ -66,15 +67,29 @@ const AdminDashboard = ({data}) => {
 
             {/* Admin Quick Actions (Dashboard ko complete feel dene ke liye) */}
             <div className='flex flex-col sm:flex-row gap-4'>
-                <Link to='/employees' className='btn-primary group inline-flex items-center justify-center gap-2'>
-                    <PlusIcon className='w-4 h-4' />
-                    Add New Employee 
-                </Link>
-
-                <Link to='/leave' className='btn-secondary hover:shadow-sm inline-flex items-center justify-center gap-2 group'>
-                    Review Leaves
-                    <ArrowRightIcon className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                </Link>
+                {data?.role === "MANAGER" ? (
+                    <>
+                        <Link to='/employees' className='btn-primary group inline-flex items-center justify-center gap-2'>
+                            <UserIcon className='w-4 h-4' />
+                            View team
+                        </Link>
+                        <Link to='/leave' className='btn-secondary hover:shadow-sm inline-flex items-center justify-center gap-2 group'>
+                            Review Leaves
+                            <ArrowRightIcon className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
+                        </Link>
+                    </>
+                ) : (
+                    <>
+                        <Link to='/employees' className='btn-primary group inline-flex items-center justify-center gap-2'>
+                            <PlusIcon className='w-4 h-4' />
+                            Add New Employee
+                        </Link>
+                        <Link to='/leave' className='btn-secondary hover:shadow-sm inline-flex items-center justify-center gap-2 group'>
+                            Review Leaves
+                            <ArrowRightIcon className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
+                        </Link>
+                    </>
+                )}
             </div>
         </div>
   )

@@ -18,6 +18,12 @@ const LoginLanding = () => {
             icon: ShieldIcon
         },
         {
+            to: '/login/manager',
+            title: 'Manager Portal',
+            description: "Approve team leave requests, overtime, and attendance corrections.",
+            icon: ShieldIcon
+        },
+        {
             to: '/login/employee',
             title: 'Employee Portal',
             description: "View your profile, track attendance, request time off, and access payslips.",

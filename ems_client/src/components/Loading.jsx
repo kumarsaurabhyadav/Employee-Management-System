@@ -1,10 +1,14 @@
 import React from 'react'
 import { LayoutGridIcon } from 'lucide-react'
 
-const Loading = () => {
+const Loading = ({ embedded = false }) => {
   return (
     // Clean background matching your content area
-    <div className='flex flex-col items-center justify-center min-h-screen bg-white'>
+    <div
+      className={`flex flex-col items-center justify-center bg-white ${
+        embedded ? "min-h-[50vh] py-16" : "min-h-screen"
+      }`}
+    >
         
         <div className='relative flex items-center justify-center'>
             {/* 1. Outer Sleek Spinning Ring */}
