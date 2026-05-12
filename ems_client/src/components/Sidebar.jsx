@@ -10,6 +10,7 @@ const Sidebar = () => {
     const navigate = useNavigate()
     const [userName, setUserName] = useState('')
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [hasCompletedAttendance, setHasCompletedAttendance] = useState(false)
 
     const { user, loading, logout} = useAuth()
 
@@ -18,6 +19,24 @@ const Sidebar = () => {
             if(data.firstName) setUserName(`${data.firstName} ${data.lastName || ""}`.trim());
         })
     }, [])
+
+    // Check if user has completed attendance records (for overtime visibility)
+    useEffect(() => {
+        if (user && user.role === "EMPLOYEE") {
+            api.get("/attendance/history?limit=10")
+                .then(({ data }) => {
+                    const hasCompleted = data?.some(record => record.checkOut);
+                    setHasCompletedAttendance(hasCompleted);
+                })
+                .catch(() => {
+                    // If we can't check, assume they have records to avoid hiding unnecessarily
+                    setHasCompletedAttendance(true);
+                });
+        } else {
+            // Admins and managers always see overtime
+            setHasCompletedAttendance(true);
+        }
+    }, [user]);
 
     //Close mobile sidebar on route change
     useEffect(() => {
@@ -31,7 +50,7 @@ const Sidebar = () => {
         {name: "Employees", href: "/employees", icon: UserIcon} : 
         {name: "Attendence", href: "/attendence", icon: CalendarIcon},
         {name: "Leave", href: "/leave", icon: FileTextIcon},
-        {name: "Overtime", href: "/overtime", icon: ClockIcon},
+        ...(hasCompletedAttendance ? [{name: "Overtime", href: "/overtime", icon: ClockIcon}] : []),
         {name: "Payslips", href: "/payslips", icon: DollarSignIcon},
         ...(role === "ADMIN" || role === "MANAGER" ? [{name: "Approvals", href: "/approvals", icon: CheckSquareIcon}] : []),
         {name: "Settings", href: "/settings", icon: SettingsIcon}

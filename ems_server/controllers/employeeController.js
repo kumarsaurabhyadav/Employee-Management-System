@@ -1,6 +1,7 @@
 import Employee from "../models/Employee.js";
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 
 //Get employees
@@ -61,6 +62,22 @@ export const createEmployees = async (req, res)=>{
             bio: bio || "",
 
         })
+
+        // Send notification to all users about new employee
+        try {
+            const allUsers = await User.find({}, '_id');
+            const notifications = allUsers.map(userDoc => ({
+                userId: userDoc._id,
+                title: "New Team Member",
+                body: `${firstName} ${lastName} has joined the team as ${role || "EMPLOYEE"} in ${department || "Engineering"} department.`,
+                type: "INFO",
+                readAt: null
+            }));
+            await Notification.insertMany(notifications);
+        } catch (notificationError) {
+            console.error("Failed to send new employee notifications:", notificationError);
+            // Don't fail the employee creation if notifications fail
+        }
 
         return res.status(201).json({success: true, employee})
 

@@ -85,7 +85,8 @@ const AttendanceHistory = ({ history, onRequestCorrection, correctionByDate = {}
                     </span>
                   );
                 } else {
-                  correctionCell = (
+                  // Only show correction request if there's a check-out (completed day)
+                  correctionCell = record.checkOut ? (
                     <button
                       type="button"
                       onClick={() => onRequestCorrection?.(record)}
@@ -93,6 +94,10 @@ const AttendanceHistory = ({ history, onRequestCorrection, correctionByDate = {}
                     >
                       Request
                     </button>
+                  ) : (
+                    <span className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 bg-zinc-50 rounded-lg border border-zinc-100">
+                      Active
+                    </span>
                   );
                 }
 

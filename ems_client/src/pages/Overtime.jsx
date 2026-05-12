@@ -12,6 +12,7 @@ const Overtime = () => {
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
+  const [hasCompletedAttendance, setHasCompletedAttendance] = useState(false);
 
   const [date, setDate] = useState("");
   const [hours, setHours] = useState("1");
@@ -25,6 +26,18 @@ const Overtime = () => {
         api.get(isAdminOrManager ? "/overtime?status=PENDING" : "/overtime")
       );
       setRows(Array.isArray(res.data?.data) ? res.data.data : []);
+
+      // Check if employee has completed attendance records (for hiding overtime feature)
+      if (!isAdminOrManager) {
+        try {
+          const attendanceRes = await api.get("/attendance/history?limit=10");
+          const hasCompletedRecords = attendanceRes.data?.some(record => record.checkOut);
+          setHasCompletedAttendance(hasCompletedRecords);
+        } catch (err) {
+          // If we can't check attendance, assume they have records to avoid hiding the feature unnecessarily
+          setHasCompletedAttendance(true);
+        }
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || err?.message || "Failed to load overtime");
     } finally {
@@ -67,6 +80,40 @@ const Overtime = () => {
 
   if (loading) return <Loading />;
 
+  // Redirect new employees who don't have completed attendance
+  if (!isAdminOrManager && !hasCompletedAttendance) {
+    return (
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2.5 bg-zinc-900 rounded-xl shadow-sm">
+              <ClockIcon className="w-5 h-5 text-white" />
+          </div>
+          <div>
+              <h1 className="text-2xl font-bold text-zinc-900">Overtime Tracking</h1>
+              <p className="text-sm font-medium text-zinc-500 mt-1">
+              Log your extra hours and track request status.
+              </p>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl shadow-sm p-6 sm:p-8 mb-8 max-w-3xl">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto border border-blue-200">
+              <ClockIcon className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-lg font-bold text-blue-900 mb-2">Welcome to the Team!</h2>
+            <p className="text-sm text-blue-700 mb-4">
+              Overtime tracking will be available once you've completed your first work day. Start by checking in and out to build your attendance history.
+            </p>
+            <p className="text-xs text-blue-600 font-medium">
+              Complete at least one full work day to unlock overtime features.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       <div className="flex items-center gap-3 mb-8">
@@ -81,7 +128,7 @@ const Overtime = () => {
         </div>
       </div>
 
-      {!isAdminOrManager && (
+      {!isAdminOrManager && hasCompletedAttendance && (
         <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-6 sm:p-8 mb-8 max-w-3xl">
           <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-widest border-b border-zinc-100 pb-4 mb-5">Log Overtime Hours</h2>
           <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-3 gap-5">
