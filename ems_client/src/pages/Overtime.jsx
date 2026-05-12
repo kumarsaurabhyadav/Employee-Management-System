@@ -30,9 +30,8 @@ const Overtime = () => {
       // Check if employee has completed attendance records (for hiding overtime feature)
       if (!isAdminOrManager) {
         try {
-          const attendanceRes = await api.get("/attendance/history?limit=10");
-          const hasCompletedRecords = attendanceRes.data?.some(record => record.checkOut);
-          setHasCompletedAttendance(hasCompletedRecords);
+          const attendanceRes = await api.get("/attendance/check-completed");
+          setHasCompletedAttendance(!!attendanceRes.data?.hasCompleted);
         } catch (err) {
           // If we can't check attendance, assume they have records to avoid hiding the feature unnecessarily
           setHasCompletedAttendance(true);

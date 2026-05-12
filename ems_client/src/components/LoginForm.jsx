@@ -11,7 +11,7 @@ const LoginForm = ({ role, title, subtitle }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setloading] = useState(false);
-    const { login } = useAuth()
+    const { login, user } = useAuth()
     const navigate = useNavigate()
 
     const handleSubmit = async (e) => {
@@ -43,6 +43,27 @@ const LoginForm = ({ role, title, subtitle }) => {
     };
 
     const demoData = getDemoCredentials();
+
+    if (user) {
+        return (
+            <div className='min-h-screen flex flex-col md:flex-row bg-white'>
+                <LoginLeftSide />
+                <div className='w-full md:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 min-h-screen bg-white'>
+                    <div className='w-full max-w-md text-center'>
+                        <h1 className='text-3xl font-bold text-zinc-900 mb-4'>Already signed in</h1>
+                        <p className='text-zinc-600 mb-8'>You are already logged in. Click below to continue to your dashboard.</p>
+                        <button
+                            type='button'
+                            onClick={() => navigate('/dashboard')}
+                            className='w-full py-3 text-sm font-bold uppercase tracking-widest text-white bg-zinc-900 rounded-xl hover:bg-black transition-all'
+                        >
+                            Go to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className='min-h-screen flex flex-col md:flex-row bg-white'>

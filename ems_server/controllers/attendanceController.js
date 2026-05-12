@@ -135,3 +135,31 @@ export const getAttendance = async (req, res) => {
         return res.status(500).json({error: "Failed to fetch attendance" });
     }
 }
+
+//Check if employee has completed attendance records
+//GET /api/attendance/check-completed
+export const checkCompletedAttendance = async (req, res) => {
+    try {
+        const session = req.session;
+        const employee = await Employee.findOne({ userId: session.userId });
+        
+        if (!employee) {
+            // If no employee profile, allow access (admin/manager)
+            return res.json({ hasCompleted: true, role: session.role });
+        }
+
+        // Check if employee has any completed attendance records (with checkOut)
+        const completedRecords = await Attendance.findOne({
+            employeeId: employee._id,
+            checkOut: { $exists: true, $ne: null }
+        });
+
+        return res.json({ 
+            hasCompleted: !!completedRecords,
+            role: session.role 
+        });
+    } catch (error) {
+        console.error("Check completed attendance error:", error);
+        return res.status(500).json({ error: "Failed to check attendance status" });
+    }
+}
