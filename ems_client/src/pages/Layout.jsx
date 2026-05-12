@@ -4,9 +4,10 @@ import Sidebar from '../components/Sidebar'
 import { useAuth } from '../context/AuthContext'
 import Loading from '../components/Loading'
 import NotificationsBell from '../components/notifications/NotificationsBell'
+import PasswordExpiredModal from '../components/PasswordExpiredModal'
 
 const Layout = () => {
-    const {user, loading} = useAuth()
+    const {user, loading, passwordExpired} = useAuth()
 
     if(loading) return <Loading />
     if(!user) return <Navigate to="/login"/>
@@ -21,6 +22,7 @@ const Layout = () => {
                     <Outlet />
                 </div>
             </main>
+            <PasswordExpiredModal open={passwordExpired} onClose={() => {}} />
         </div>
     )
 }

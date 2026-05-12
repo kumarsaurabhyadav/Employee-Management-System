@@ -2,15 +2,22 @@ import React, { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const ForgotPassword = () => {
   const [params] = useSearchParams();
   const role = params.get("role") || "employee";
+  const { user } = useAuth();
 
   const backTo = useMemo(() => {
+    // If user is already logged in, go back to settings
+    if (user) {
+      return "/settings";
+    }
+    // Otherwise, go to login page
     const safeRole = role === "admin" ? "admin" : "employee";
     return `/login/${safeRole}`;
-  }, [role]);
+  }, [role, user]);
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,7 +42,7 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md">
         <div className="mb-6">
           <Link to={backTo} className="text-sm font-medium text-zinc-500 hover:text-black">
-            ← Back to login
+            ← {user ? "Back to Settings" : "Back to login"}
           </Link>
         </div>
 

@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     department: { type: String, enum: DEPARTMENTS, default: null },
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpiresAt: { type: Date, default: null },
+    passwordLastChanged: { type: Date, default: Date.now },
 },{timestamps: true})
 
 const User = mongoose.models.User || mongoose.model("User", userSchema)

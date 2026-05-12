@@ -8,6 +8,7 @@ export function AuthProvider({children}){
     const [user, setUser] = useState(null)
     const [token, setToken] = useState(localStorage.getItem("token"))
     const [loading, setLoading] = useState(true)
+    const [passwordExpired, setPasswordExpired] = useState(false)
 
     const refreshSession = async () =>{
         const storedToken = localStorage.getItem("token")
@@ -39,6 +40,7 @@ export function AuthProvider({children}){
         localStorage.setItem("token", data.token)
         setToken(data.token)
         setUser(data.user)
+        setPasswordExpired(data.user.passwordExpired || false)
         return data.user
     }
 
@@ -46,9 +48,10 @@ export function AuthProvider({children}){
         localStorage.removeItem("token")
         setToken(null)
         setUser(null)
+        setPasswordExpired(false)
     }
     
-    const value = {user, token, loading, login, logout, refreshSession}
+    const value = {user, token, loading, login, logout, refreshSession, passwordExpired, setPasswordExpired}
 
     return <AuthContext.Provider value={value}>
         {children}

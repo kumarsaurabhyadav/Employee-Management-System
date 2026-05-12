@@ -68,12 +68,21 @@ const Settings = () => {
         </div>
 
         {/* 🔥 SIGNATURE BLACK PREMIUM HOVER ADDED 🔥 */}
-        <button 
-          onClick={()=> setShowPasswordModal(true)} 
-          className="px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-black hover:text-white hover:border-black transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95"
-        >
-          Change
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={()=> setShowPasswordModal(true)} 
+            className="px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-black hover:text-white hover:border-black transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+          >
+            Change
+          </button>
+          
+          <button 
+            onClick={() => window.location.href = '/forgot-password'} 
+            className="px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider text-zinc-500 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 hover:text-zinc-700 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+          >
+            Forgot
+          </button>
+        </div>
         
       </div>
       

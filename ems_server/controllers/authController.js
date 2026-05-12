@@ -36,12 +36,16 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" })
         }
 
+        // Check if password is expired (1 month = 30 days)
+        const passwordExpired = user.passwordLastChanged && 
+            (new Date() - new Date(user.passwordLastChanged)) > (30 * 24 * 60 * 60 * 1000);
+
         const payload = {
             userId: user._id.toString(),
             role: user.role,
             email: user.email,
             department: user.department,
-
+            passwordExpired: passwordExpired || false,
         }
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: "7d"});
@@ -76,7 +80,10 @@ export const changePassword = async (req, res) => {
         const isValid = await bcrypt.compare(currentPassword, user.password);
         if(!isValid) return res.status(400).json({ error: "Current password is incorrect"});
         const hashed = await bcrypt.hash(newPassword, 10);
-        await User.findByIdAndUpdate(session.userId, {password:hashed})
+        await User.findByIdAndUpdate(session.userId, {
+            password: hashed,
+            passwordLastChanged: new Date()
+        })
         return res.json({success: true});
 
     } catch (error) {
@@ -154,6 +161,7 @@ export const resetPassword = async (req, res) => {
         user.password = hashed;
         user.resetPasswordTokenHash = null;
         user.resetPasswordExpiresAt = null;
+        user.passwordLastChanged = new Date();
         await user.save();
 
         return res.json({ success: true });
