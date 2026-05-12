@@ -2,6 +2,7 @@ import OvertimeRequest from "../models/OvertimeRequest.js";
 import Employee from "../models/Employee.js";
 import AuditLog from "../models/AuditLog.js";
 import Notification from "../models/Notification.js";
+import User from "../models/User.js";
 
 const toDay = (d) => {
   const dt = new Date(d);
@@ -58,6 +59,24 @@ export const createOvertimeRequest = async (req, res) => {
       entityId: doc._id.toString(),
       details: { date: day.toISOString(), hours: hrs },
     });
+
+    // Notify approvers (admins and managers for the department)
+    const approvers = await User.find({
+      $or: [
+        { role: "ADMIN" },
+        { role: "MANAGER", department: employee.department },
+      ],
+    }).lean();
+
+    for (const approver of approvers) {
+      await Notification.create({
+        userId: approver._id,
+        type: "OVERTIME_REQUEST",
+        title: "New overtime request",
+        body: `${employee.firstName} ${employee.lastName} has submitted an overtime request for ${day.toDateString()}.`,
+        meta: { overtimeId: doc._id.toString(), employeeId: employee._id.toString() },
+      });
+    }
 
     return res.json({ success: true, data: doc });
   } catch {

@@ -80,13 +80,16 @@ const Leave = () => {
     <div className='animate-fade-in'>
       
       {/* Premium Zinc Header */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8'>
+      <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8 w-full'>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Leave Management</h1>
           <p className="text-sm font-medium text-zinc-500 mt-1">{subtitle}</p>
         </div>
         {isEmployeeOnly && !isDeleted && (
-          <button onClick={() => setShowModal(true)} className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg w-full sm:w-auto justify-center shadow-sm'>
+          <button
+            onClick={() => setShowModal(true)}
+            className='bg-zinc-900 hover:bg-black text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg w-full sm:w-auto justify-center shadow-sm shrink-0 mr-14'
+          >
             <PlusIcon className='w-4 h-4' /> Apply for Leave
           </button>
         )}

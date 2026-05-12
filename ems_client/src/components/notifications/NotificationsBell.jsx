@@ -1,26 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
-import { BellIcon, XIcon } from "lucide-react";
+import { BellIcon, BellOffIcon, InfoIcon, CheckCheckIcon, Loader2Icon } from "lucide-react";
+// Agar date-fns use kar rahe ho toh "formatDistanceToNow" se "14 mins ago" jaisa text aata hai
+import { formatDistanceToNow } from "date-fns"; 
 
 const NotificationsBell = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
+  
+  const dropdownRef = useRef(null);
 
+  // Click outside to close Dropdown
   useEffect(() => {
-    if (!open) return;
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
+  // Escape key to close
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
+    if (open) document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
   const fetchNotifications = async () => {
@@ -60,110 +74,143 @@ const NotificationsBell = () => {
     }
   };
 
+  // Safe time formatter
+  const getTimeAgo = (dateString) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return new Date(dateString).toLocaleDateString();
+    }
+  };
+
   return (
-    <>
+    <div className="relative inline-block" ref={dropdownRef}>
+      
+      {/* 🚀 THE BELL BUTTON */}
       <button
         type="button"
         onClick={() => {
-          setOpen(true);
-          fetchNotifications();
+          setOpen(!open);
+          if (!open) fetchNotifications();
         }}
-        className="relative inline-flex shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20"
-        aria-label="Notifications"
-        aria-expanded={open}
+        className={`relative inline-flex shrink-0 items-center justify-center rounded-xl p-2.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20 active:scale-95 group
+          ${open ? 'bg-zinc-100 shadow-inner' : 'bg-transparent hover:bg-zinc-100'}
+        `}
       >
-        <BellIcon className="h-5 w-5 text-zinc-700" aria-hidden />
+        <BellIcon className={`h-5 w-5 transition-colors ${open ? 'text-zinc-900' : 'text-zinc-600 group-hover:text-zinc-900'}`} />
+        
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-zinc-900 px-1 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+          <span className="absolute -right-1 -top-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black tracking-widest text-white shadow-sm ring-2 ring-zinc-50">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
 
+      {/* 🚀 THE COMPACT & SPACIOUS DROPDOWN CONTAINER */}
       {open && (
-        <div
-          className="fixed inset-0 z-[100] flex justify-end bg-black/45 backdrop-blur-[2px]"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
-          <aside
-            className="flex h-full w-full max-w-md flex-col border-l border-zinc-200 bg-white shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="notifications-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-100 p-4 sm:p-5">
-              <div className="min-w-0">
-                <p id="notifications-title" className="font-bold text-zinc-900">
-                  Notifications
-                </p>
-                <p className="text-sm text-zinc-500">
-                  {unread === 0 ? "All caught up" : `${unread} unread`}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
+        <div className="absolute right-0 mt-3 w-[360px] sm:w-[440px] bg-white rounded-2xl shadow-[0_15px_50px_-10px_rgba(0,0,0,0.2)] border border-zinc-200 overflow-hidden z-50 animate-slide-down origin-top-right flex flex-col">
+          
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between bg-white shrink-0">
+            <h3 className="text-lg font-black text-zinc-900 tracking-tight">Notifications</h3>
+            {unread > 0 && (
+                <button 
                   onClick={markAll}
-                  disabled={unread === 0}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-700 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-40"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
                 >
-                  Mark all
+                  Mark all as read
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20"
-                  aria-label="Close notifications"
-                >
-                  <XIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+            )}
+          </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-              {loading ? (
-                <p className="text-sm text-zinc-500">Loading…</p>
-              ) : items.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/80 px-4 py-8 text-center">
-                  <p className="text-sm font-medium text-zinc-700">No notifications yet</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Approvals and reminders will show up here.
-                  </p>
+          {/* Scrollable Body (Increased Height) */}
+          <div className="max-h-[480px] overflow-y-auto overscroll-contain">
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                    <Loader2Icon className="w-6 h-6 text-zinc-400 animate-spin" />
                 </div>
-              ) : (
-                <ul className="space-y-2">
-                  {items.map((n) => (
-                    <li key={n._id}>
-                      <button
-                        type="button"
-                        onClick={() => markRead(n._id)}
-                        className={`w-full rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/15 ${
-                          n.readAt
-                            ? "border-zinc-200 bg-white hover:bg-zinc-50"
-                            : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
-                        }`}
-                      >
-                        <p className="font-semibold text-zinc-900">{n.title}</p>
-                        {n.body ? (
-                          <p className="mt-1 line-clamp-3 text-sm text-zinc-600">{n.body}</p>
-                        ) : null}
-                        <p className="mt-2 text-xs text-zinc-400">
-                          {new Date(n.createdAt).toLocaleString()}
-                        </p>
-                      </button>
-                    </li>
-                  ))}
+            ) : items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                  <div className="w-14 h-14 bg-zinc-50 rounded-full flex items-center justify-center mb-4 border border-zinc-100">
+                      <BellOffIcon className="w-6 h-6 text-zinc-300" />
+                  </div>
+                  <p className="text-base font-bold text-zinc-800">You're all caught up!</p>
+                  <p className="mt-1.5 text-xs font-medium text-zinc-500">No new notifications at the moment.</p>
+                </div>
+            ) : (
+                <ul className="divide-y divide-zinc-50">
+                  {items.map((n) => {
+                    const isRead = !!n.readAt;
+                    return (
+                      <li key={n._id}>
+                        <button
+                          type="button"
+                          onClick={() => markRead(n._id)}
+                          disabled={isRead}
+                          className={`w-full flex items-start gap-4 p-5 text-left transition-colors
+                            ${isRead ? "bg-white hover:bg-zinc-50" : "bg-blue-50/30 hover:bg-blue-50/60"}
+                          `}
+                        >
+                          {/* Left Icon Avatar */}
+                          <div className={`mt-0.5 shrink-0 w-11 h-11 rounded-full flex items-center justify-center border
+                            ${isRead ? "bg-zinc-50 border-zinc-200 text-zinc-400" : "bg-white border-blue-100 text-blue-500 shadow-sm"}
+                          `}>
+                             {isRead ? <CheckCheckIcon className="w-4.5 h-4.5" /> : <InfoIcon className="w-4.5 h-4.5" />}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 pr-2">
+                              <p className={`text-[15px] tracking-tight ${isRead ? "text-zinc-600 font-semibold" : "text-zinc-900 font-bold"}`}>
+                                {n.title}
+                              </p>
+                              {n.body && (
+                                <p className={`mt-1 text-[13px] line-clamp-2 leading-snug ${isRead ? "text-zinc-500 font-medium" : "text-zinc-600"}`}>
+                                  {n.body}
+                                </p>
+                              )}
+                              <p className="mt-2 text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+                                {getTimeAgo(n.createdAt)}
+                              </p>
+                          </div>
+                          
+                          {/* Unread Dot */}
+                          {!isRead && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 shrink-0"></div>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
-              )}
-            </div>
-          </aside>
+            )}
+          </div>
+
+          {/* Sticky Footer */}
+          {items.length > 0 && (
+              <div className="border-t border-zinc-100 bg-zinc-50 p-3 shrink-0">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await api.delete("/notifications/clear-all");
+                        setItems([]);
+                        setUnread(0);
+                        setOpen(false);
+                        toast.success("All notifications cleared");
+                      } catch (err) {
+                        toast.error(err.response?.data?.error || err?.message || "Failed to clear notifications");
+                      }
+                    }}
+                    className="w-full py-2.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-xl transition-colors"
+                  >
+                      Clear notifications
+                  </button>
+              </div>
+          )}
+
         </div>
       )}
-    </>
+    </div>
   );
 };
 
 export default NotificationsBell;
-

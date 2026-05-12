@@ -49,3 +49,14 @@ export const markAllRead = async (req, res) => {
   }
 };
 
+// DELETE /api/notifications/clear-all
+export const clearAllNotifications = async (req, res) => {
+  try {
+    const session = req.session;
+    await Notification.deleteMany({ userId: session.userId });
+    return res.json({ success: true });
+  } catch {
+    return res.status(500).json({ error: "Failed to clear notifications" });
+  }
+};
+

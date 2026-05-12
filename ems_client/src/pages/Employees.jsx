@@ -67,12 +67,14 @@ const Employees = () => {
                 </div>
                 
                 {canEditRoster && (
+                <div className='fixed top-4 right-16 sm:right-20 lg:right-24 z-50 flex items-center'>
                 <button 
                     onClick={()=>setShowCreateModel(true)} 
                     className='px-6 py-3.5 rounded-2xl text-[13px] font-bold uppercase tracking-widest text-white bg-zinc-900 hover:bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2.5 w-full sm:w-auto justify-center active:scale-95'
                 >
                 <Plus size={18} strokeWidth={3} /> Add Employee
                 </button>
+                </div>
                 )}
             </div>
 

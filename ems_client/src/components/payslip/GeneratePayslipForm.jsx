@@ -10,13 +10,15 @@ const GeneratePayslipForm = ({ employees = [], onSuccess }) => {
 
     // Trigger Button
     if (!isOpen) return (
-        <button
-            onClick={() => setIsOpen(true)}
-            className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm w-full sm:w-auto justify-center'
-        >
-            <Plus className='w-4 h-4' />
-            Generate Payslip
-        </button>
+        <div className='fixed top-4 right-16 sm:right-20 lg:right-24 z-50 flex items-center'>
+            <button
+                onClick={() => setIsOpen(true)}
+                className='bg-zinc-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm w-full sm:w-auto justify-center'
+            >
+                <Plus className='w-4 h-4' />
+                Generate Payslip
+            </button>
+        </div>
     )
 
 const handleSubmit = async (e) => {

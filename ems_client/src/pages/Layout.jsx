@@ -14,9 +14,9 @@ const Layout = () => {
         <div className='flex h-screen bg-linear-to-br from-slate-50 via-white to-indigo-50/30'>
             <Sidebar/>
             <main className='flex flex-1 min-h-0 flex-col overflow-hidden'>
-                <header className='sticky top-0 z-30 flex shrink-0 items-center justify-end gap-2 border-b border-zinc-200/70 bg-white/90 py-3 pl-14 pr-4 backdrop-blur-md sm:pl-4 lg:pl-6 lg:pr-6'>
+                <div className='fixed top-4 right-4 sm:right-6 lg:right-8 z-50'>
                     <NotificationsBell />
-                </header>
+                </div>
                 <div className='flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-400 mx-auto w-full'>
                     <Outlet />
                 </div>

@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import Loading from "../components/Loading";
 import { withMinLoader } from "../utils/loaderDelay";
+import { FileCheck2Icon, CheckIcon, XIcon, FileWarningIcon, ClockIcon } from "lucide-react";
 
 const Approvals = () => {
   const { user } = useAuth();
@@ -40,72 +41,115 @@ const Approvals = () => {
 
   if (!isAdminOrManager) {
     return (
-      <div className="animate-fade-in">
-        <p className="text-sm text-zinc-500">Not authorized.</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] animate-fade-in">
+        <FileWarningIcon className="w-12 h-12 text-zinc-300 mb-3" />
+        <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Not Authorized</p>
       </div>
     );
   }
 
+  // 🚀 THE FIX: Top level Full-Screen Loader
+  if (loading) return <Loading />;
+
+  // Helper function to format time without seconds
+  const formatTime = (dateString) => {
+      if (!dateString) return "—";
+      return new Date(dateString).toLocaleTimeString(undefined, {
+          hour: '2-digit',
+          minute: '2-digit'
+      });
+  };
+
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900">Approvals</h1>
-        <p className="text-sm text-zinc-500 mt-1">Pending attendance correction requests</p>
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2.5 bg-zinc-900 rounded-xl shadow-sm">
+            <FileCheck2Icon className="w-5 h-5 text-white" />
+        </div>
+        <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Approvals</h1>
+            <p className="text-sm font-medium text-zinc-500 mt-1">Pending attendance correction requests</p>
+        </div>
       </div>
 
       <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 bg-white flex items-center justify-between">
-          <p className="text-sm font-semibold text-zinc-900">Correction Requests</p>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-200/60">
-            {requests.length} pending
+        <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between">
+          <p className="text-base font-bold text-zinc-900">Correction Requests</p>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-50 px-3 py-1.5 rounded-md border border-zinc-200/60">
+            {requests.length} {requests.length === 1 ? 'PENDING' : 'PENDING'}
           </span>
         </div>
 
-        {loading ? (
-          <Loading embedded />
-        ) : requests.length === 0 ? (
-          <div className="p-6 text-sm text-zinc-500">No pending requests.</div>
+        {requests.length === 0 ? (
+          // 🚀 THE FIX: Premium Empty State
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mb-4 border border-zinc-100">
+                  <CheckIcon className="w-6 h-6 text-zinc-300" />
+              </div>
+              <p className="text-sm font-bold text-zinc-900 uppercase tracking-widest">All Caught Up!</p>
+              <p className="mt-1 text-xs font-medium text-zinc-500">There are no pending requests to review right now.</p>
+          </div>
         ) : (
           <div className="divide-y divide-zinc-100">
             {requests.map((r) => (
-              <div key={r._id || r.id} className="p-6 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-zinc-900">
+              <div key={r._id || r.id} className="p-6 flex flex-col hover:bg-zinc-50/50 transition-colors">
+                
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  
+                  {/* Left Side: Employee Info */}
+                  <div className="flex-1">
+                    <p className="text-[15px] font-bold text-zinc-900 capitalize mb-1">
                       {r.employee?.firstName} {r.employee?.lastName}
                     </p>
-                    <p className="text-sm text-zinc-500">
-                      {new Date(r.date).toLocaleDateString()} • {r.employee?.department}
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4">
+                        <span className="bg-zinc-100 px-2 py-1 rounded text-zinc-700">
+                            {new Date(r.date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}
+                        </span>
+                        <span>•</span>
+                        <span className="text-zinc-500">{r.employee?.department || 'N/A'}</span>
+                    </div>
+
+                    {/* Check-In / Out Display */}
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2 bg-white border border-zinc-200 px-3 py-2 rounded-lg">
+                            <ClockIcon className="w-3.5 h-3.5 text-zinc-400" />
+                            <div>
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Req. Check-In</p>
+                                <p className="text-[13px] font-bold text-zinc-900 mt-1 leading-none">{formatTime(r.requestedCheckIn)}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white border border-zinc-200 px-3 py-2 rounded-lg">
+                            <ClockIcon className="w-3.5 h-3.5 text-zinc-400" />
+                            <div>
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">Req. Check-Out</p>
+                                <p className="text-[13px] font-bold text-zinc-900 mt-1 leading-none">{formatTime(r.requestedCheckOut)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Reason Box */}
+                    <p className="text-sm text-zinc-600 font-medium bg-zinc-50/50 p-3 rounded-lg border border-zinc-100 leading-snug">
+                        <span className="text-zinc-400 font-bold mr-2 uppercase text-[10px] tracking-widest">Reason:</span>
+                        {r.reason}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+
+                  {/* Right Side: Action Buttons */}
+                  <div className="flex gap-2 shrink-0 border-t sm:border-t-0 pt-4 sm:pt-0 w-full sm:w-auto">
                     <button
                       onClick={() => review(r._id || r.id, "APPROVED")}
-                      className="px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-white bg-black rounded-lg hover:bg-zinc-800"
+                      className="flex-1 sm:flex-none justify-center px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200/50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1.5"
                     >
-                      Approve
+                      <CheckIcon className="w-3.5 h-3.5" strokeWidth={3} /> Approve
                     </button>
                     <button
                       onClick={() => review(r._id || r.id, "REJECTED")}
-                      className="px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50"
+                      className="flex-1 sm:flex-none justify-center px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200/50 rounded-xl hover:bg-rose-500 hover:text-white transition-all flex items-center gap-1.5"
                     >
-                      Reject
+                      <XIcon className="w-3.5 h-3.5" strokeWidth={3} /> Reject
                     </button>
                   </div>
-                </div>
 
-                <div className="text-sm text-zinc-700">
-                  <p>
-                    <span className="font-semibold text-zinc-900">Requested check-in:</span>{" "}
-                    {r.requestedCheckIn ? new Date(r.requestedCheckIn).toLocaleTimeString() : "—"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-zinc-900">Requested check-out:</span>{" "}
-                    {r.requestedCheckOut ? new Date(r.requestedCheckOut).toLocaleTimeString() : "—"}
-                  </p>
-                  <p className="mt-2">
-                    <span className="font-semibold text-zinc-900">Reason:</span> {r.reason}
-                  </p>
                 </div>
               </div>
             ))}
@@ -117,4 +161,3 @@ const Approvals = () => {
 };
 
 export default Approvals;
-

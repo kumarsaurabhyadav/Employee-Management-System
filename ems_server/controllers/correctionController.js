@@ -3,6 +3,8 @@ import AttendanceCorrectionRequest from "../models/AttendanceCorrectionRequest.j
 import AuditLog from "../models/AuditLog.js";
 import Employee from "../models/Employee.js";
 import Notification from "../models/Notification.js";
+import ShiftPolicy from "../models/ShiftPolicy.js";
+import User from "../models/User.js";
 
 const toDay = (d) => {
   const dt = new Date(d);
@@ -29,6 +31,46 @@ const logAudit = async ({ req, action, entityType, entityId, details }) => {
     entityId,
     details: details || {},
   });
+};
+
+const recalculateAttendanceMetrics = async (attendance, employee) => {
+  if (!attendance.checkIn || !attendance.checkOut) return;
+
+  const checkInTime = new Date(attendance.checkIn).getTime();
+  const checkOutTime = new Date(attendance.checkOut).getTime();
+  const diffMs = checkOutTime - checkInTime;
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  const workingHours = parseFloat(diffHours.toFixed(2));
+  let dayType = "Short Day";
+
+  if (workingHours >= 8) {
+    dayType = "Full Day";
+  } else if (workingHours >= 6) {
+    dayType = "Three Quarter Day";
+  } else if (workingHours >= 4) {
+    dayType = "Half Day";
+  }
+
+  attendance.workingHours = workingHours;
+  attendance.dayType = dayType;
+
+  // Recalculate status based on checkIn and shift policy
+  const policy = await ShiftPolicy.findOne({ department: employee.department }).lean();
+  const shiftStartMinutes = policy?.shiftStartMinutes ?? 9 * 60;
+  const lateGraceMinutes = policy?.lateGraceMinutes ?? 15;
+
+  const shiftStart = new Date(attendance.date);
+  shiftStart.setHours(
+    Math.floor(shiftStartMinutes / 60),
+    shiftStartMinutes % 60,
+    0,
+    0,
+  );
+  const lateAfter = new Date(shiftStart.getTime() + lateGraceMinutes * 60 * 1000);
+  const isLate = new Date(attendance.checkIn).getTime() > lateAfter.getTime();
+
+  attendance.status = isLate ? "LATE" : "PRESENT";
 };
 
 // POST /api/corrections
@@ -80,6 +122,24 @@ export const createCorrectionRequest = async (req, res) => {
       entityId: doc._id.toString(),
       details: { date: day.toISOString() },
     });
+
+    // Notify approvers (admins and managers for the department)
+    const approvers = await User.find({
+      $or: [
+        { role: "ADMIN" },
+        { role: "MANAGER", department: employee.department },
+      ],
+    }).lean();
+
+    for (const approver of approvers) {
+      await Notification.create({
+        userId: approver._id,
+        type: "CORRECTION_REQUEST",
+        title: "New attendance correction request",
+        body: `${employee.firstName} ${employee.lastName} has submitted an attendance correction request for ${day.toDateString()}.`,
+        meta: { correctionId: doc._id.toString(), employeeId: employee._id.toString() },
+      });
+    }
 
     return res.json({ success: true, data: doc });
   } catch (error) {
@@ -186,6 +246,10 @@ export const reviewCorrectionRequest = async (req, res) => {
 
       attendance.checkIn = doc.requestedCheckIn ?? attendance.checkIn ?? null;
       attendance.checkOut = doc.requestedCheckOut ?? attendance.checkOut ?? null;
+
+      // Recalculate working hours, day type, and status
+      await recalculateAttendanceMetrics(attendance, doc.employeeId);
+
       await attendance.save();
 
       await logAudit({
