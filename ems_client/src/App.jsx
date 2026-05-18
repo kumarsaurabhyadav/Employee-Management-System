@@ -4,6 +4,10 @@ import { Routes, Route, Navigate } from "react-router-dom"
 
 import HomePage from './pages/HomePage'
 import LoginLanding from './pages/LoginLanding'
+import AdminCourses from './pages/AdminCourses'
+import AdminCertificates from './pages/AdminCertificates'
+import CourseSettings from './components/learning/CourseSetting'
+import MyLearnings from './pages/MyLearnings'
 
 const Layout = lazy(() => import('./pages/Layout'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -49,6 +53,12 @@ const App = () => {
             <Route path='/approvals' element={<Approvals/>}/>
             <Route path='/overtime' element={<Overtime/>}/>
             <Route path='/settings' element={<Setting/>}/>
+            <Route path='/admin/courses' element={<AdminCourses />} />
+            <Route path='/admin/certificates' element={<AdminCertificates />} />
+            <Route path='/my-learning' element={<MyLearnings/>} />
+            <Route path='/admin/courses/settings' element={<CourseSettings/>} />
+            <Route path='/manager/courses/settings' element={<CourseSettings/>} />
+            <Route path='/my-learning/settings' element={<CourseSettings/>} />
           </Route>
 
           <Route path='/print/payslips/:id' element={<PrintPayslip/>}/>

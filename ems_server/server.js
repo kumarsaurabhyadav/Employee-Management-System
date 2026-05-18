@@ -5,6 +5,7 @@ import multer from "multer";
 import connectDB from "./config/db.js";
 import authRouter from "./routes/authRoutes.js";
 import employeeRouter from "./routes/employeeRoutes.js";
+import courseRouter from "./routes/courseRoutes.js";
 import profileRouter from "./routes/profileRoutes.js";
 import attendaceRouter from "./routes/attendanceRoutes.js";
 import leaveRouter from "./routes/leaveRoutes.js";
@@ -31,6 +32,7 @@ app.use(multer().none())
 app.get("/", (req, res)=> res.send("server is running"))
 app.use("/api/auth", authRouter)
 app.use("/api/employees", employeeRouter)
+app.use("/api/courses", courseRouter)
 app.use("/api/profile", profileRouter)
 app.use("/api/attendance", attendaceRouter)
 app.use("/api/leave", leaveRouter)

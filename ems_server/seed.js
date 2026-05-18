@@ -1,6 +1,7 @@
 import "dotenv/config";
 import connectDB from "./config/db.js";
 import User from "./models/User.js";
+import Course from "./models/Course.js";
 import bcrypt from "bcrypt";
 
 
@@ -53,6 +54,64 @@ async function registerAdmin(){
             console.log("password:", ManagerPassword);
         } else {
             console.log("\nMANAGER already exists as role", existingManager.role);
+        }
+
+        // create a sample employee for testing
+        const employeeEmail = 'employee@text.com';
+        const employeePassword = 'employee123';
+        const existingEmployee = await User.findOne({ email: employeeEmail });
+        if (!existingEmployee) {
+            const empHash = await bcrypt.hash(employeePassword, 10);
+            const emp = await User.create({
+                email: employeeEmail,
+                password: empHash,
+                role: 'EMPLOYEE',
+                department: 'Engineering'
+            });
+            console.log('\nEMPLOYEE user created');
+            console.log('email:', emp.email);
+            console.log('password:', employeePassword);
+        } else {
+            console.log('\nEMPLOYEE already exists as role', existingEmployee.role);
+        }
+
+        const courseCount = await Course.countDocuments();
+        if (courseCount === 0) {
+            await Course.insertMany([
+                {
+                    title: "Employee Onboarding Fundamentals",
+                    description: "Complete guide for new employees covering company culture, policies, and standard procedures.",
+                    category: "Onboarding",
+                    duration: "2h 30m",
+                    videos: 12,
+                    students: 145,
+                    status: "published",
+                    rating: 4.8,
+                },
+                {
+                    title: "Workplace Safety Training",
+                    description: "Essential safety protocols and procedures for a secure and healthy work environment.",
+                    category: "Safety",
+                    duration: "1h 45m",
+                    videos: 8,
+                    students: 230,
+                    status: "published",
+                    rating: 4.9,
+                },
+                {
+                    title: "Leadership Development",
+                    description: "Advanced leadership skills and team management strategies for aspiring managers.",
+                    category: "Leadership",
+                    duration: "4h 15m",
+                    videos: 15,
+                    students: 67,
+                    status: "published",
+                    rating: 4.7,
+                },
+            ]);
+            console.log("\nSample courses created.");
+        } else {
+            console.log(`\n${courseCount} courses already exist.`);
         }
         
         process.exit(0)
