@@ -1,4 +1,4 @@
-import { ArrowRightIcon, Copyright, ShieldIcon, UserIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, Copyright, ShieldIcon, UserIcon } from 'lucide-react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import LoginLeftSide from '../components/LoginLeftSide';
 import Loading from '../components/Loading';
@@ -58,8 +58,18 @@ const LoginLanding = () => {
 
         {/* Light theme background for right side */}
         <div className='w-full md:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-16 relative overflow-y-auto min-h-screen bg-white'>
-
             <div className='w-full max-w-md animate-fade-in relative'>
+
+                <Link
+                    to={'/'}
+                    className='inline-flex items-center gap-2 text-zinc-400 hover:text-black text-sm mb-8 transition-all duration-300 font-medium group w-fit'
+                >
+                    <ArrowLeftIcon
+                        size={16}
+                        className='group-hover:-translate-x-1 transition-transform duration-300'
+                    />
+                    <span>Back to Homepage</span>
+                </Link>
 
                 {/* Header */}
                 <div className='mb-10 text-center md:text-left'>
