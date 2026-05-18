@@ -2,8 +2,9 @@ import React, { Suspense, lazy } from 'react'
 import { Toaster } from "react-hot-toast"
 import { Routes, Route, Navigate } from "react-router-dom"
 
-const HomePage = lazy(() => import('./pages/HomePage'))
-const LoginLanding = lazy(() => import('./pages/LoginLanding'))
+import HomePage from './pages/HomePage'
+import LoginLanding from './pages/LoginLanding'
+
 const Layout = lazy(() => import('./pages/Layout'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Employees = lazy(() => import('./pages/Employees'))
@@ -22,12 +23,15 @@ const App = () => {
   return (
     <>
       <Toaster />
-      <Suspense fallback={<div className="min-h-screen grid place-items-center bg-white text-black">Loading...</div>}>
+      {/* Fallback ko black rakha hai taaki agar load ho bhi toh jhatka na lage */}
+      <Suspense fallback={<div className="min-h-screen bg-black" />}>
         <Routes>
+          {/* Landing Pages */}
           <Route path='/' element={<HomePage/>} />
           <Route path='/landing' element={<HomePage/>} />
           <Route path='/login' element={<LoginLanding/>}/>
 
+          {/* Auth Routes */}
           <Route path='/login/admin' element={<LoginForm role='admin' title='Admin Portal' subtitle='Sign in to manage the organization'/>}/>
           <Route path='/login/employee' element={<LoginForm role='employee' title='Employee Portal' subtitle='Sign in to access your account'/>}/>
           <Route path='/login/manager' element={<LoginForm role='manager' title='Manager Portal' subtitle='Sign in to manage your team approvals'/>}/>
@@ -35,6 +39,7 @@ const App = () => {
           <Route path='/forgot-password' element={<ForgotPassword/>}/>
           <Route path='/reset-password' element={<ResetPassword/>}/>
 
+          {/* Protected Dashboard Routes */}
           <Route element={<Layout/>}>
             <Route path='/dashboard' element={<Dashboard/>}/>
             <Route path='/employees' element={<Employees/>}/>
@@ -45,6 +50,7 @@ const App = () => {
             <Route path='/overtime' element={<Overtime/>}/>
             <Route path='/settings' element={<Setting/>}/>
           </Route>
+
           <Route path='/print/payslips/:id' element={<PrintPayslip/>}/>
           <Route path='/*' element={<Navigate to='/' replace/>}/>
         </Routes>
