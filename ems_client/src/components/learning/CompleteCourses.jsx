@@ -6,6 +6,10 @@ import toast from 'react-hot-toast';
 const CompleteCourses = () => {
   const [completed, setCompleted] = useState([]);
 
+  const recentCourse = completed
+    .slice()
+    .sort((a, b) => new Date(b.enrolledInfo?.completedAt).getTime() - new Date(a.enrolledInfo?.completedAt).getTime())[0];
+
   const load = async () => {
     try {
       const { data } = await api.get('/courses/my');
@@ -49,6 +53,35 @@ const CompleteCourses = () => {
 
   return (
     <div className="mt-14 animate-fade-in">
+      {recentCourse ? (
+        <div className="mb-10 rounded-4xl border border-zinc-200 bg-white shadow-sm p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-emerald-500 font-semibold mb-2">Recent certificate</p>
+              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">{recentCourse.title}</h2>
+              <p className="text-sm text-zinc-500 mt-2">
+                Completed on {new Date(recentCourse.enrolledInfo?.completedAt).toLocaleDateString()} • {recentCourse.category || 'Learning Path'}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <button
+                onClick={() => handleDownload(recentCourse)}
+                disabled={!recentCourse.enrolledInfo?.certificatePath}
+                className={`btn-primary py-3 px-5 text-sm font-semibold ${!recentCourse.enrolledInfo?.certificatePath ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Download Certificate
+              </button>
+              <button
+                onClick={() => handleRegenerate(recentCourse)}
+                className="btn-secondary py-3 px-5 text-sm font-semibold"
+              >
+                Regenerate Certificate
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* 🚀 Header: Title with "View All" Button */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -89,7 +122,7 @@ const CompleteCourses = () => {
             </div>
 
             {/* 🚀 Content Section */}
-            <div className="p-5 flex flex-col flex-grow">
+            <div className="p-5 flex flex-col grow">
               <h3 className="text-base font-black text-zinc-900 leading-tight mb-1 group-hover:text-black transition-colors">
                 {course.title}
               </h3>
@@ -98,20 +131,17 @@ const CompleteCourses = () => {
               </p>
 
               {/* Action Button: Matches btn-secondary for download */}
-              {course.enrolledInfo?.certificatePath ? (
-                <button onClick={() => handleDownload(course)} className="mt-auto btn-secondary w-full py-2.5 flex items-center justify-center gap-2 text-zinc-900 font-bold text-xs hover:bg-zinc-900 hover:text-white hover:border-zinc-900 active:scale-95 transition-all">
+              <div className="mt-auto w-full grid grid-cols-1 gap-2">
+                <button
+                  onClick={() => handleDownload(course)}
+                  disabled={!course.enrolledInfo?.certificatePath}
+                  className={`btn-secondary w-full py-2.5 flex items-center justify-center gap-2 text-zinc-900 font-bold text-xs hover:bg-zinc-900 hover:text-white hover:border-zinc-900 active:scale-95 transition-all ${!course.enrolledInfo?.certificatePath ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
                   <Download size={14} />
-                  Download Certificate
+                  {course.enrolledInfo?.certificatePath ? 'Download Certificate' : 'Pending Certificate'}
                 </button>
-              ) : (
-                <div className="mt-auto w-full flex gap-2">
-                  <button onClick={() => handleRegenerate(course)} className="flex-1 btn-primary py-2.5 text-xs font-bold">Regenerate Certificate</button>
-                  <button disabled className="w-36 btn-secondary py-2.5 text-xs text-zinc-400 opacity-60 cursor-not-allowed">
-                    <Download size={14} />
-                    Pending
-                  </button>
-                </div>
-              )}
+                <button onClick={() => handleRegenerate(course)} className="btn-primary w-full py-2.5 text-xs font-bold">Regenerate Certificate</button>
+              </div>
             </div>
           </div>
         ))}

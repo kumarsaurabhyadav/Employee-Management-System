@@ -40,14 +40,19 @@ const Courses = () => {
     }
   };
 
-  const handleComplete = async (course) => {
+  const handlePrimaryAction = async (course) => {
     try {
-      await api.post(`/courses/${course.id || course._id}/complete`);
-      toast.success('Marked as complete');
+      if (course.enrolledInfo?.completed) {
+        await api.post(`/courses/${course.id || course._id}/certificate/regenerate`);
+        toast.success('Certificate regenerated');
+      } else {
+        await api.post(`/courses/${course.id || course._id}/complete`);
+        toast.success('Marked as complete');
+      }
       load();
     } catch (error) {
-      console.error('complete failed', error);
-      toast.error('Failed to complete');
+      console.error('action failed', error);
+      toast.error(error.response?.data?.error || 'Failed to update course');
     }
   };
 
@@ -108,11 +113,10 @@ const Courses = () => {
                 {/* Buttons */}
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => handleComplete(course)}
-                    disabled={course.enrolledInfo?.completed}
-                    className={`btn-secondary py-3 px-4 text-xs ${course.enrolledInfo?.completed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handlePrimaryAction(course)}
+                    className="btn-secondary py-3 px-4 text-xs"
                   >
-                    {course.enrolledInfo?.completed ? 'Completed' : 'Mark Complete'}
+                    {course.enrolledInfo?.completed ? 'Regenerate' : 'Mark Complete'}
                   </button>
                   <button className="btn-primary py-3 px-8 gap-3 group/btn hover:shadow-zinc-300">
                     <span className="font-black tracking-widest text-[11px] uppercase">Continue</span>

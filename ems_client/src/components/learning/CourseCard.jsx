@@ -50,6 +50,11 @@ const CourseCard = ({ course, onEdit, onDelete }) => {
         </div>
 
         {/* Metadata Footer: Zinc 900 highlights */}
+        {course.isGenerated && (
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-700">
+            AI Generated
+          </div>
+        )}
         <div className="flex items-center gap-5 mt-auto border-t border-zinc-50 pt-4">
           <div className="flex items-center gap-1.5 text-zinc-400 group-hover:text-zinc-900 transition-colors">
             <Video size={13} strokeWidth={2.5} />

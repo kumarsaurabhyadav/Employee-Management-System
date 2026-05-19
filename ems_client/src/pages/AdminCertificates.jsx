@@ -62,23 +62,12 @@ const AdminCertificates = () => {
     }
   };
 
-  const handleRegenerate = async (record) => {
-    try {
-      await api.post(`/courses/${record.courseId}/certificate/regenerate`, { userId: record.userId });
-      toast.success('Certificate regenerated');
-      loadRecords();
-    } catch (error) {
-      console.error('regenerate failed', error);
-      toast.error(error.response?.data?.error || 'Failed to regenerate certificate');
-    }
-  };
-
   return (
     <div className="min-h-screen animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
         <div>
           <h1 className="page-title">Certificate Management</h1>
-          <p className="page-subtitle mt-1">View enrolled users, certificate status, and regenerate PDFs as needed.</p>
+          <p className="page-subtitle mt-1">View enrolled users and certificate status, then download employee certificates.</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={loadRecords} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm">
@@ -139,12 +128,6 @@ const AdminCertificates = () => {
                     )}
                   </td>
                   <td className="px-4 py-4 space-x-2">
-                    <button
-                      onClick={() => handleRegenerate(record)}
-                      className="btn-primary px-3 py-2 text-xs font-semibold"
-                    >
-                      Regenerate
-                    </button>
                     <button
                       onClick={() => handleDownload(record)}
                       disabled={!record.certificatePath}

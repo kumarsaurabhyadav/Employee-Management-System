@@ -1,11 +1,17 @@
 import { Settings, PlayCircle } from 'lucide-react' // 🚀 PlayCircle add kiya
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import CourseStats from '../components/learning/CourseStats'
 import Courses from '../components/learning/Courses'
 import CompleteCourses from '../components/learning/CompleteCourses'
 
 const MyLearnings = () => {
+  const { user } = useAuth();
+  const role = user?.role ? user.role.toLowerCase() : 'employee';
+  const pageTitle = role === 'manager' ? 'Team Learning' : 'My Learning';
+  const settingsPath = role === 'manager' ? '/manager/courses/settings' : '/my-learning/settings';
+
   return (
     <div className="min-h-screen animate-fade-in">
 
@@ -13,7 +19,7 @@ const MyLearnings = () => {
             <div className="flex items-start justify-between mb-8">
                 <div>
                     <h1 className="page-title">
-                        My Learning
+                        {pageTitle}
                     </h1>
                     <p className="page-subtitle mt-1">
                         Continue your professional development journey
@@ -22,7 +28,7 @@ const MyLearnings = () => {
 
                 {/* 🚀 Settings Button */}
                 <Link
-                    to="/admin/courses/settings"
+                    to={settingsPath}
                     className="btn-secondary flex items-center gap-2 px-4 py-2.5 mr-8"
                 >
                     <Settings className="h-4 w-4  text-zinc-700" />
@@ -33,9 +39,9 @@ const MyLearnings = () => {
             </div>
             
             <div className="min-h-screen animate-fade-in">
-                {/* 🚀 Stats Cards Section - Role Hardcoded as 'employee' */}
+                {/* 🚀 Stats Cards Section uses real role from session */}
                 <div className="mt-10">
-                    <CourseStats role="employee" />
+                    <CourseStats role={role} />
                 </div>
 
                 {/* 🚀 Continue Learning Section: Fixed CSS */}

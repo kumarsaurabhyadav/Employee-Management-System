@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Loading from '../components/Loading';
 import { Link } from 'react-router-dom';
 import CourseStats from '../components/learning/CourseStats';
+import CourseAIGenerator from '../components/learning/CourseAIGenerator';
 import { Plus, Settings, Search, Video, X } from 'lucide-react';
 import CourseCard from '../components/learning/CourseCard';
 import CourseForm from '../components/learning/CourseForm';
@@ -11,6 +12,7 @@ import toast from 'react-hot-toast';
 const AdminCourses = () => {
     const [loading, setLoading] = useState(true);
     const [showCreateModel, setShowCreateModel] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [courses, setCourses] = useState([]);
     const [query, setQuery] = useState('');
     const [editingCourse, setEditingCourse] = useState(null);
@@ -135,16 +137,26 @@ const AdminCourses = () => {
                     </div>
 
                     {/* Add Course Button */}
-                    <button
-                        onClick={() => { setEditingCourse(null); setShowCreateModel(true); }}
-                        className="btn-primary flex items-center gap-2 px-5 py-3 whitespace-nowrap"
-                    >
-                        <Plus size={18} className="text-white" />
-
-                        <span className="text-sm font-semibold tracking-tight">
-                            Add New Course
-                        </span>
-                    </button>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={() => setShowGenerateModal(true)}
+                            className="btn-secondary flex items-center gap-2 px-5 py-3 whitespace-nowrap"
+                        >
+                            <Video size={18} className="text-zinc-900" />
+                            <span className="text-sm font-semibold tracking-tight text-zinc-900">
+                                Generate Course
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => { setEditingCourse(null); setShowCreateModel(true); }}
+                            className="btn-primary flex items-center gap-2 px-5 py-3 whitespace-nowrap"
+                        >
+                            <Plus size={18} className="text-white" />
+                            <span className="text-sm font-semibold tracking-tight">
+                                Upload Course
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* course card placeholder */}
@@ -154,6 +166,41 @@ const AdminCourses = () => {
                     ))}
                 </div>
             </div>
+
+            {showGenerateModal && (
+                <div
+                    className='fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 sm:pt-20 overflow-y-auto bg-zinc-950/60 backdrop-blur-sm transition-opacity animate-fade-in'
+                    onClick={() => setShowGenerateModal(false)}
+                >
+                    <div
+                        className='relative bg-white rounded-4xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] border border-zinc-100 w-full max-w-3xl mb-8 animate-slide-up'
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className='flex items-center justify-between p-6 sm:p-8 border-b border-zinc-100'>
+                            <div>
+                                <h2 className='text-2xl font-black text-zinc-900 tracking-tight'>Generate Course with AI</h2>
+                                <p className='text-[13px] text-zinc-500 mt-1 font-medium'>Give a short topic or requirement and let the system create a course draft.</p>
+                            </div>
+                            <button
+                                onClick={() => setShowGenerateModal(false)}
+                                className='p-2 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-900 border border-zinc-200'
+                            >
+                                <X className='w-5 h-5' />
+                            </button>
+                        </div>
+
+                        <div className='p-6 sm:p-8 bg-zinc-50/30 rounded-b-4xl'>
+                            <CourseAIGenerator
+                                onCancel={() => setShowGenerateModal(false)}
+                                onSuccess={(course) => {
+                                    handleCourseCreated(course);
+                                    setShowGenerateModal(false);
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showCreateModel && (
                 <div
